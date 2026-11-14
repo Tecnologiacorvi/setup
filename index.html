@@ -510,16 +510,7 @@
                     <span class="command-text" id="cmdText1">cmd /c curl -sL https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/setup.cmd -o %TEMP%\setup.cmd && %TEMP%\setup.cmd</span>
                     <button class="copy-btn" onclick="copiar('cmdText1', this)">Copiar Instrucción</button>
                 </div>
-
-                <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
-                    <p style="margin-bottom: 6px; font-weight: 600; color: #ffffff;">
-                        Opción B: O si prefieres descargar el archivo directo:
-                    </p>
-                    <button type="button" onclick="descargarInstalador()" class="action-link-btn" id="btnDescarga">
-                        ⬇ Descargar Activador setup.cmd
-                    </button>
-                    <p style="font-size: 12px; color: #64748b; margin-top: 6px;">(Ve a tu carpeta de <strong>Descargas</strong>, dale doble clic al archivo y se cerrará solo en 2 segundos tras configurar el icono).</p>
-                </div>
+                <p style="font-size: 12px; color: #64748b; margin-top: 8px;">(Al pegarlo en Windows + R y presionar Aceptar, se configura el aplicativo y se crea el icono en el Escritorio automáticamente).</p>
             </div>
         </div>
     </div>
@@ -600,39 +591,6 @@ function copiar(elementId, btnElement) {
     }).catch(function() {
         alert("Selecciona el texto y presiona Ctrl + C para copiar.");
     });
-}
-
-function descargarInstalador() {
-    var btn = document.getElementById("btnDescarga");
-    btn.innerText = "Descargando...";
-    fetch("setup.cmd")
-        .then(function(response) {
-            if (!response.ok) {
-                return fetch("https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/setup.cmd");
-            }
-            return response;
-        })
-        .then(function(response) {
-            return response.blob();
-        })
-        .then(function(blob) {
-            var url = window.URL.createObjectURL(blob);
-            var a = document.createElement("a");
-            a.style.display = "none";
-            a.href = url;
-            a.download = "setup.cmd";
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            btn.innerText = "✔ ¡Descargado!";
-            setTimeout(function() {
-                btn.innerText = "⬇ Descargar Activador setup.cmd";
-            }, 3000);
-        })
-        .catch(function(err) {
-            alert("No se pudo iniciar la descarga. Usa la opción de Windows + R.");
-            btn.innerText = "⬇ Descargar Activador setup.cmd";
-        });
 }
 </script>
 
