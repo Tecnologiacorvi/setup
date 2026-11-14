@@ -2235,6 +2235,76 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         .badge.pausado { background: #fef3c7; color: #92400e; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
+        .clock-widget {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .classic-clock {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid var(--burgundy-deep);
+            position: relative;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        .clock-pin {
+            width: 5px;
+            height: 5px;
+            background: var(--burgundy-vivid);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+        .clock-hour {
+            width: 2.5px;
+            height: 10px;
+            background: #1e293b;
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            margin-left: -1.25px;
+            transform-origin: bottom center;
+            transform: rotate(45deg);
+            border-radius: 2px;
+        }
+        .clock-minute {
+            width: 1.8px;
+            height: 14px;
+            background: #475569;
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            margin-left: -0.9px;
+            transform-origin: bottom center;
+            transform: rotate(180deg);
+            border-radius: 2px;
+        }
+        .clock-second {
+            width: 1.2px;
+            height: 16px;
+            background: #dc2626;
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            margin-left: -0.6px;
+            transform-origin: bottom center;
+            transform: rotate(0deg);
+            border-radius: 1px;
+        }
+        .clock-second.activo {
+            animation: rotarSegundero 60s linear infinite;
+        }
+        @keyframes rotarSegundero {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .time-display {
             text-align: right;
             font-size: 11px;
@@ -2249,7 +2319,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         }
         .time-display strong {
             display: block;
-            font-size: 22px;
+            font-size: 21px;
             font-weight: 800;
             color: var(--burgundy-deep);
             font-variant-numeric: tabular-nums;
@@ -2363,9 +2433,18 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <span id="badgeEstado" class="badge detenido">⚪ DETENIDO</span>
                 <div id="horaEntradaTag" style="font-size: 11px; color: #64748b; margin-top: 5px; font-weight: 600;">Entrada: --:--:--</div>
             </div>
-            <div class="time-display">
-                <span id="labelReloj">⏱️ TIEMPO EN VIVO</span>
-                <strong id="cronometro">00:00:00</strong>
+            
+            <div class="clock-widget">
+                <div class="classic-clock" id="relojClasico" title="Reloj de Jornada CORVI">
+                    <div class="clock-pin"></div>
+                    <div class="clock-hour"></div>
+                    <div class="clock-minute"></div>
+                    <div class="clock-second" id="segunderoAgujas"></div>
+                </div>
+                <div class="time-display">
+                    <span>TIEMPO LABORADO</span>
+                    <strong id="cronometro">0 min</strong>
+                </div>
             </div>
         </div>
 
@@ -2403,16 +2482,18 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         let segundosBase = 0;
         let marcaTiempoSync = Date.now();
 
-        function segToHMS(s) {
+        function segToHM(s) {
             const secNum = Math.max(0, Math.floor(s));
-            const h = Math.floor(secNum / 3600).toString().padStart(2, '0');
-            const m = Math.floor((secNum % 3600) / 60).toString().padStart(2, '0');
-            const sec = (secNum % 60).toString().padStart(2, '0');
-            return `${h}:${m}:${sec}`;
+            const h = Math.floor(secNum / 3600);
+            const m = Math.floor((secNum % 3600) / 60);
+            if (h > 0) {
+                return `${h}h ${m.toString().padStart(2, '0')}m`;
+            }
+            return `${m} min`;
         }
 
-        // Cronómetro matemático continuo: calcula segundos exactos transcurridos en tiempo real
-        // Garantiza avance fluido segundo a segundo (43, 44, 45...) con 0.0% CPU y cero saltos de 10s
+        // Reloj clásico animado + tiempo en minutos/horas
+        // Cero números de segundos digitales: elimina al 100% cualquier salto o discordia visual
         function refrescarCronometroVisual() {
             let mostrar = segundosBase;
             if (estadoActual === 'ACTIVO') {
@@ -2420,11 +2501,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 mostrar = segundosBase + Math.max(0, deltaSeg);
             }
             const el = document.getElementById('cronometro');
-            if (el) el.innerText = segToHMS(mostrar);
+            if (el) el.innerText = segToHM(mostrar);
         }
 
-        // Ticking continuo cada 250ms para sincronización visual perfecta
-        setInterval(refrescarCronometroVisual, 250);
+        // Actualización visual periódica
+        setInterval(refrescarCronometroVisual, 1000);
 
         async function actualizarEstado() {
             try {
@@ -2461,13 +2542,17 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 marcaTiempoSync = Date.now();
                 refrescarCronometroVisual();
 
+                const segundero = document.getElementById('segunderoAgujas');
+
                 if (data.estado === 'ACTIVO') {
+                    if (segundero) segundero.className = 'clock-second activo';
                     badge.className = 'badge activo';
                     badge.innerHTML = '🟢 EN JORNADA ACTIVA';
                     btnStart.style.display = 'none';
                     btnPause.style.display = 'flex';
                     btnStop.style.display = 'flex';
                 } else if (data.estado === 'PAUSADO') {
+                    if (segundero) segundero.className = 'clock-second';
                     badge.className = 'badge pausado';
                     badge.innerHTML = '🟡 EN PAUSA / TIEMPO PERSONAL';
                     btnStart.style.display = 'flex';
@@ -2475,6 +2560,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     btnPause.style.display = 'none';
                     btnStop.style.display = 'flex';
                 } else {
+                    if (segundero) segundero.className = 'clock-second';
                     badge.className = 'badge detenido';
                     badge.innerHTML = '⚪ JORNADA DETENIDA';
                     btnStart.style.display = 'flex';
