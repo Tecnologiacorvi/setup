@@ -220,6 +220,21 @@ def get_active_window_info():
                 app_name = proc.name()
             except Exception:
                 pass
+            
+            # Respaldo nativo con Win32 API si psutil no está disponible o falla
+            if app_name == "Aplicación Windows":
+                try:
+                    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+                    h_proc = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid.value)
+                    if h_proc:
+                        buf = ctypes.create_unicode_buffer(1024)
+                        size = ctypes.c_ulong(1024)
+                        if ctypes.windll.kernel32.QueryFullProcessImageNameW(h_proc, 0, buf, ctypes.byref(size)):
+                            app_name = os.path.basename(buf.value)
+                        ctypes.windll.kernel32.CloseHandle(h_proc)
+                except Exception:
+                    pass
+
             return app_name, title
         except Exception:
             return "Desconocido", "Ventana Desconocida"
@@ -289,12 +304,16 @@ def desglosar_actividad_web(app_name, title):
     app_lower = app_name.lower()
     es_navegador = any(b in app_lower for b in ["chrome", "chromium", "firefox", "edge", "brave", "opera"])
     
-    # Limpiar sufijos típicos de títulos de navegadores
+    # Limpiar sufijos típicos de títulos de navegadores (soporta guion ASCII, guion medio en-dash, guion largo em-dash y barra)
     titulo_limpio = title
-    for sufijo in [" - Google Chrome", " - Chromium", " - Mozilla Firefox", " - Microsoft Edge"]:
-        if titulo_limpio.endswith(sufijo):
-            titulo_limpio = titulo_limpio[:-len(sufijo)].strip()
-            break
+    for b_suf in [
+        "Google Chrome", "Chromium", "Mozilla Firefox", "Microsoft Edge", "Brave", "Opera"
+    ]:
+        for sep in [" - ", " – ", " — ", " | ", " -", " –", " —"]:
+            pat = f"{sep}{b_suf}"
+            if titulo_limpio.endswith(pat):
+                titulo_limpio = titulo_limpio[:-len(pat)].strip()
+                break
 
     titulo_upper = titulo_limpio.upper()
 
@@ -798,8 +817,15 @@ def enviar_reporte_diario_email(resumen, json_path, html_path):
 
             # -----------------------------------------------------------------
             # 1. CORREO FORENSE TÉCNICO (tecnologia@corviconsultores.com)
+            # Asunto con horario único para que Gmail NUNCA los agrupe en un mismo hilo
             # -----------------------------------------------------------------
-            asunto_tec = f"📊 [CONTROL DE ASISTENCIA] Auditoría Forense: {nombre} ({cargo}) — {fecha}"
+            import unicodedata
+            h_ini = inicio.replace(":", "")[:4]
+            h_fin = fin.replace(":", "")[:4]
+            nombre_ascii = unicodedata.normalize('NFKD', nombre).encode('ASCII', 'ignore').decode('utf-8').replace(' ', '_')
+            nombre_archivo_html = f"REPORTE_JORNADA_{fecha}_{nombre_ascii}_{h_ini}-{h_fin}.html"
+
+            asunto_tec = f"📊 [TURNO {inicio[:5]} - {fin[:5]}] Auditoría: {nombre} ({cargo}) — {fecha}"
             cuerpo_tec = f"""REPORTE OFICIAL DE TELEMETRÍA Y JORNADA LABORAL
 Firma: CORVI CONSULTORES S.A.S.
 Fecha: {fecha}
@@ -818,20 +844,21 @@ RESUMEN DE EFICIENCIA:
 • Disponibilidad Internet:  {resumen.get('disponibilidad_internet_pct', 100)}% ({len(cortes)} cortes)
 • Total Capturas Pantalla:  {resumen.get('total_capturas', 0)} registros
 
-Se adjunta el archivo interactivo oficial 'REPORTE_JORNADA.html' con la galería de capturas de pantalla, desglose por software y métricas de red.
+Se adjunta el archivo interactivo oficial '{nombre_archivo_html}' con la galería de capturas de pantalla, desglose por software y métricas de red.
 """
             msg_tec = MIMEMultipart()
             msg_tec["From"] = "CORVI Control de Asistencia <linda.gutierrez@corviconsultores.com>"
             msg_tec["To"] = "tecnologia@corviconsultores.com"
             msg_tec["Subject"] = asunto_tec
+            msg_tec["Content-Language"] = "es"
             msg_tec.attach(MIMEText(cuerpo_tec, "plain", "utf-8"))
 
             if html_path and os.path.exists(html_path):
                 with open(html_path, "rb") as f_attach:
-                    part = MIMEBase("application", "octet-stream")
+                    part = MIMEBase("text", "html", charset="utf-8")
                     part.set_payload(f_attach.read())
                 encoders.encode_base64(part)
-                part.add_header("Content-Disposition", f"attachment; filename=REPORTE_JORNADA_{fecha}_{nombre.replace(' ', '_')}.html")
+                part.add_header("Content-Disposition", "attachment", filename=nombre_archivo_html)
                 msg_tec.attach(part)
 
             # -----------------------------------------------------------------
@@ -1192,6 +1219,16 @@ class CorviAsistenciaEngine:
                 self.distribucion_categorias[cat] = self.distribucion_categorias.get(cat, 0) + int(delta)
 
                 # Distribución detallada por contexto exacto
+                # Si el título vino truncado con "..." por el navegador/sistema, intentar resolver con inventario abierto
+                if titulo_limpio.endswith("...") or titulo_limpio.endswith("…"):
+                    prefijo = titulo_limpio.rstrip(".… ").strip()
+                    if len(prefijo) >= 8:
+                        for p in bg_info.get("pestanas_abiertas", []):
+                            p_t = p.get("titulo", "")
+                            if p_t.startswith(prefijo) and len(p_t) > len(titulo_limpio):
+                                titulo_limpio = p_t
+                                break
+
                 clave_detalle = f"{plataforma} || {titulo_limpio} || {cat}"
                 self.distribucion_detallada[clave_detalle] = self.distribucion_detallada.get(clave_detalle, 0) + int(delta)
 
@@ -1331,6 +1368,21 @@ class CorviAsistenciaEngine:
             contexto = partes[1] if len(partes) > 1 else plat
             categoria = partes[2] if len(partes) > 2 else "Operativa"
 
+            # Resolución de nombres completos si vinieron con "..." del sistema o navegador
+            if contexto.endswith("...") or contexto.endswith("…"):
+                prefijo = contexto.rstrip(".… ").strip()
+                if len(prefijo) >= 8:
+                    for p in self.pestanas_segundo_plano_vistas.values():
+                        p_t = p.get("titulo", "")
+                        if p_t.startswith(prefijo) and len(p_t) > len(contexto):
+                            contexto = p_t
+                            break
+                    if contexto.endswith("...") or contexto.endswith("…"):
+                        for m_t in self.historial_musica_fondo.keys():
+                            if m_t.startswith(prefijo) and len(m_t) > len(contexto):
+                                contexto = m_t
+                                break
+
             pct = round((segs / total_s) * 100, 1)
             es_oficina = "WORKADVENTURE" in plat.upper() or "OFICINA VIRTUAL" in plat.upper()
             es_ai = "ANTIGRAVITY" in plat.upper() or "COPILOTO" in plat.upper()
@@ -1343,22 +1395,25 @@ class CorviAsistenciaEngine:
             elif "🚨" in plat:
                 tag_badge = '<span style="background: #dc2626; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 6px;">NO AUTORIZADO</span>'
 
+            # Escapar comillas dobles para tooltip HTML seguro
+            contexto_safe = contexto.replace('"', '&quot;')
+
             filas_detalladas += f"""
             <tr style="{'background: #f0fdf4;' if es_oficina else ('background: #f5f3ff;' if es_ai else '')}">
-                <td style="font-weight: 700; color: #160826; white-space: nowrap;">
+                <td style="font-weight: 700; color: #160826; white-space: normal; word-break: break-word;">
                     {plat} {tag_badge}
                 </td>
-                <td style="color: #2d3748; word-break: break-all;">
+                <td style="color: #2d3748; word-break: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.45; font-size: 13.5px;" title="{contexto_safe}">
                     <strong>{contexto}</strong>
                 </td>
-                <td style="font-size: 12px; color: #718096;">{categoria}</td>
+                <td style="font-size: 12px; color: #718096; white-space: nowrap;">{categoria}</td>
                 <td style="font-weight: 600; white-space: nowrap;">{seg_to_str(segs)}</td>
-                <td>
+                <td style="width: 14%;">
                     <div style="background: #e9ecef; border-radius: 4px; overflow: hidden; height: 14px; width: 100%;">
                         <div style="background: {'#059669' if es_oficina else ('#4f46e5' if es_ai else ('#dc2626' if '🚨' in plat else '#9e0e47'))}; height: 100%; width: {min(pct, 100)}%;"></div>
                     </div>
                 </td>
-                <td style="text-align: right; font-weight: 700; color: #160826;">{pct}%</td>
+                <td style="text-align: right; font-weight: 700; color: #160826; white-space: nowrap;">{pct}%</td>
             </tr>
             """
 
@@ -1566,11 +1621,13 @@ class CorviAsistenciaEngine:
             width: 100%;
             border-collapse: collapse;
             font-size: 13.5px;
+            table-layout: auto;
         }}
         th, td {{
             padding: 10px 12px;
             text-align: left;
             border-bottom: 1px solid #edf2f7;
+            vertical-align: middle;
         }}
         th {{
             background: #f8fafc;
@@ -1709,11 +1766,11 @@ class CorviAsistenciaEngine:
         <table>
             <thead>
                 <tr>
-                    <th style="width: 25%;">Plataforma / Módulo</th>
-                    <th style="width: 35%;">Documento / Pestaña / Contexto Exacto</th>
-                    <th style="width: 15%;">Categoría</th>
-                    <th style="width: 12%;">Tiempo</th>
-                    <th style="width: 13%;">Proporción</th>
+                    <th style="width: 22%;">Plataforma / Módulo</th>
+                    <th style="width: 40%;">Documento / Pestaña / Contexto Exacto</th>
+                    <th style="width: 14%;">Categoría</th>
+                    <th style="width: 10%;">Tiempo</th>
+                    <th style="width: 14%; text-align: right;" colspan="2">Proporción</th>
                 </tr>
             </thead>
             <tbody>
