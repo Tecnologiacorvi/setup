@@ -34,24 +34,26 @@ curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github
 curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/Archivos_del_Sistema/icono_corvi.ico" -o "%INSTALL_DIR%\icono_corvi.ico"
 curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/version.json" -o "%INSTALL_DIR%\version.json"
 
-:: 4. Verificar presencia de Python; si no existe, desplegar runtime portatil oficial
+:: 4. Validar ejecucion REAL de Python (evita falsos positivos con los alias vacios de Windows Store)
 set "HAS_PYTHON=0"
-where pythonw.exe >nul 2>&1 && set "HAS_PYTHON=1"
-if exist "%LOCALAPPDATA%\Programs\Python\Python311\pythonw.exe" set "HAS_PYTHON=1"
-if exist "%LOCALAPPDATA%\Programs\Python\Python312\pythonw.exe" set "HAS_PYTHON=1"
-if exist "%INSTALL_DIR%\python\pythonw.exe" set "HAS_PYTHON=1"
+if exist "%INSTALL_DIR%\python\pythonw.exe" (
+    "%INSTALL_DIR%\python\python.exe" -c "import sys" >nul 2>&1
+    if !errorlevel! equ 0 set "HAS_PYTHON=1"
+)
+if "!HAS_PYTHON!"=="0" (
+    python.exe -c "import sys" >nul 2>&1
+    if !errorlevel! equ 0 set "HAS_PYTHON=1"
+)
 
-if "%HAS_PYTHON%"=="0" (
+if "!HAS_PYTHON!"=="0" (
     echo [*] Configurando motor portatil de ejecucion en su equipo (primera vez)...
-    curl.exe -sL "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.zip" -o "%INSTALL_DIR%\runtime.zip"
     if not exist "%INSTALL_DIR%\python" mkdir "%INSTALL_DIR%\python"
-    tar.exe -xf "%INSTALL_DIR%\runtime.zip" -C "%INSTALL_DIR%\python" >nul 2>&1
-    if not exist "%INSTALL_DIR%\python\pythonw.exe" (
-        powershell -Command "Expand-Archive -Path '%INSTALL_DIR%\runtime.zip' -DestinationPath '%INSTALL_DIR%\python' -Force" >nul 2>&1
-    )
-    del /f /q "%INSTALL_DIR%\runtime.zip" >nul 2>&1
+    curl.exe -sL "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.tar.gz" -o "%INSTALL_DIR%\runtime.tar.gz"
+    cd /d "%INSTALL_DIR%\python"
+    tar.exe -xzf "%INSTALL_DIR%\runtime.tar.gz" >nul 2>&1
+    del /f /q "%INSTALL_DIR%\runtime.tar.gz" >nul 2>&1
+    cd /d "%INSTALL_DIR%"
 ) else (
-    :: Si ya tiene Python instalado, validar que Pillow este instalado
     python -m pip install Pillow --quiet >nul 2>&1
 )
 
