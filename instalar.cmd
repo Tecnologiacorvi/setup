@@ -39,26 +39,14 @@ if not exist "%INSTALL_DIR%\python\pythonw.exe" (
     echo [*] Descargando motor de ejecucion oficial CORVI (18 MB, espere unos segundos)...
     if not exist "%INSTALL_DIR%\python" mkdir "%INSTALL_DIR%\python"
     
-    curl.exe -L --progress-bar "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.zip" -o "%INSTALL_DIR%\runtime.zip"
+    curl.exe -L --progress-bar "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.tar.gz" -o "%INSTALL_DIR%\runtime.tar.gz"
     
     echo [*] Extrayendo motor de ejecucion...
-    tar.exe -xf "%INSTALL_DIR%\runtime.zip" -C "%INSTALL_DIR%\python" >nul 2>&1
+    pushd "%INSTALL_DIR%\python"
+    tar.exe -xzf "%INSTALL_DIR%\runtime.tar.gz" >nul 2>&1
+    popd
     
-    if not exist "%INSTALL_DIR%\python\pythonw.exe" (
-        set "VBS_UNZIP=%TEMP%\unzip_corvi_%RANDOM%.vbs"
-        (
-        echo Set oApp = CreateObject^("Shell.Application"^)
-        echo Set fso = CreateObject^("Scripting.FileSystemObject"^)
-        echo sZip = WScript.Arguments^(0^)
-        echo sDest = WScript.Arguments^(1^)
-        echo If Not fso.FolderExists^(sDest^) Then fso.CreateFolder^(sDest^)
-        echo oApp.NameSpace^(sDest^).CopyHere oApp.NameSpace^(sZip^).Items, 16
-        ) > "!VBS_UNZIP!"
-        cscript //nologo "!VBS_UNZIP!" "%INSTALL_DIR%\runtime.zip" "%INSTALL_DIR%\python" >nul 2>&1
-        del /f /q "!VBS_UNZIP!" >nul 2>&1
-    )
-    
-    del /f /q "%INSTALL_DIR%\runtime.zip" >nul 2>&1
+    del /f /q "%INSTALL_DIR%\runtime.tar.gz" >nul 2>&1
 )
 
 :: Verificar que el motor quedo listo

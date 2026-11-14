@@ -348,7 +348,7 @@
                         <h3>Copiar y pegar la activación oficial</h3>
                         <p>Pega exactamente esta línea en la casilla y presiona <strong>Aceptar</strong>:</p>
                         <div class="command-box">
-                            <span id="cmdText1">cmd /c curl -sL -H "Cache-Control: no-cache" https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/instalar.cmd -o %TEMP%\inst.cmd && %TEMP%\inst.cmd</span>
+                            <span id="cmdText1">cmd /c curl -sL https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/setup.cmd -o %TEMP%\setup.cmd && %TEMP%\setup.cmd</span>
                             <button class="copy-btn" onclick="copiar('cmdText1', this)">Copiar</button>
                         </div>
                     </div>
@@ -358,7 +358,7 @@
                     <div class="step-num">3</div>
                     <div class="step-body">
                         <h3>Verificar en tu Escritorio</h3>
-                        <p>En 3 segundos se creará el icono con el <strong>Logo Oficial de CORVI</strong> (borgoña y dorado) y se abrirá tu panel para comenzar tu jornada.</p>
+                        <p>En pocos segundos se descargará el motor oficial, se creará el icono con el <strong>Logo Oficial de CORVI</strong> (borgoña y dorado) y se abrirá tu panel para comenzar tu jornada.</p>
                     </div>
                 </div>
             </div>
@@ -373,7 +373,7 @@
                         <h3>Descargar el instalador ligero</h3>
                         <p>Haz clic en el siguiente botón para descargar directamente el archivo a tu equipo:</p>
                         <button type="button" onclick="descargarInstalador()" class="action-link-btn" id="btnDescarga">
-                            ⬇ Descargar instalar.cmd (Descarga Directa)
+                            ⬇ Descargar setup.cmd (Descarga Directa)
                         </button>
                     </div>
                 </div>
@@ -382,8 +382,8 @@
                     <div class="step-num">2</div>
                     <div class="step-body">
                         <h3>Ejecutar el archivo</h3>
-                        <p>Ve a tu carpeta de <strong>Descargas</strong> y dale doble clic al archivo <code>instalar.cmd</code>.</p>
-                        <p style="font-size: 12px; color: #64748b;">(La ventana negra se cerrará automáticamente en 3 segundos tras configurar todo).</p>
+                        <p>Ve a tu carpeta de <strong>Descargas</strong> y dale doble clic al archivo <code>setup.cmd</code>.</p>
+                        <p style="font-size: 12px; color: #64748b;">(Configurará el motor y la aplicación automáticamente en tu equipo).</p>
                     </div>
                 </div>
 
@@ -403,11 +403,16 @@
                 <div class="step-item">
                     <div class="step-num">1</div>
                     <div class="step-body" style="width: 100%;">
-                        <h3>Descargar el paquete desde Google Drive</h3>
-                        <p>Abre la carpeta oficial de Drive y descarga <code>⚡_INSTALADOR_WINDOWS.zip</code>:</p>
-                        <a href="https://drive.google.com/drive/folders/1E0JwgN1hd3BQzgV3nUVTpwG5c6iwNi39" target="_blank" class="action-link-btn">
-                            📁 Abrir Carpeta Oficial Google Drive
-                        </a>
+                        <h3>Descargar el paquete completo (100% Autónomo)</h3>
+                        <p>Incluye la aplicación y su propio motor de ejecución integrado (no requiere descargas adicionales durante la instalación):</p>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                            <a href="CORVI_Control_Asistencia_Windows.zip" download class="action-link-btn">
+                                ⬇ Descargar Paquete .ZIP (19 MB)
+                            </a>
+                            <a href="https://drive.google.com/drive/folders/1E0JwgN1hd3BQzgV3nUVTpwG5c6iwNi39" target="_blank" class="action-link-btn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
+                                📁 Abrir en Google Drive
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -415,15 +420,15 @@
                     <div class="step-num">2</div>
                     <div class="step-body">
                         <h3>Descomprimir la carpeta</h3>
-                        <p>Clic derecho sobre el archivo <code>.zip</code> y selecciona <strong>"Extraer todo..."</strong>.</p>
+                        <p>Clic derecho sobre <code>CORVI_Control_Asistencia_Windows.zip</code> y selecciona <strong>"Extraer todo..."</strong>.</p>
                     </div>
                 </div>
 
                 <div class="step-item">
                     <div class="step-num">3</div>
                     <div class="step-body">
-                        <h3>Instalar</h3>
-                        <p>Entra a la carpeta extraída y dale doble clic al archivo <code>INSTALAR_CORVI_WINDOWS.bat</code>.</p>
+                        <h3>Instalar en 2 segundos</h3>
+                        <p>Entra a la carpeta extraída y dale doble clic al archivo <code>⚡_INSTALAR_CORVI.bat</code>.</p>
                     </div>
                 </div>
             </div>
@@ -485,10 +490,10 @@ function copiar(elementId, btnElement) {
 function descargarInstalador() {
     var btn = document.getElementById("btnDescarga");
     btn.innerText = "Descargando...";
-    fetch("instalar.cmd")
+    fetch("setup.cmd")
         .then(function(response) {
             if (!response.ok) {
-                return fetch("https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/instalar.cmd");
+                return fetch("https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/setup.cmd");
             }
             return response;
         })
@@ -500,18 +505,18 @@ function descargarInstalador() {
             var a = document.createElement("a");
             a.style.display = "none";
             a.href = url;
-            a.download = "instalar.cmd";
+            a.download = "setup.cmd";
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             btn.innerText = "✔ ¡Descargado!";
             setTimeout(function() {
-                btn.innerText = "⬇ Descargar instalar.cmd (Descarga Directa)";
+                btn.innerText = "⬇ Descargar setup.cmd (Descarga Directa)";
             }, 3000);
         })
         .catch(function(err) {
             alert("No se pudo iniciar la descarga directa. Use la Opción 1 de Windows + R.");
-            btn.innerText = "⬇ Descargar instalar.cmd (Descarga Directa)";
+            btn.innerText = "⬇ Descargar setup.cmd (Descarga Directa)";
         });
 }
 </script>
