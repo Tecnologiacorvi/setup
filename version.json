@@ -1,6 +1,6 @@
 {
-  "version": "1.3.4",
+  "version": "1.3.5",
   "fecha": "2026-11-14",
-  "descripcion": "Despacho tecnico forense a tecnologia y Resumen Ejecutivo de alertas a David (cero correo al colaborador)",
+  "descripcion": "Resolucion de nombres completos sin truncar y wrapping inteligente en reporte",
   "min_version": "1.0.0"
 }

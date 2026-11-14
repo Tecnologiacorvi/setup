@@ -881,10 +881,10 @@ Se adjunta el archivo interactivo oficial '{nombre_archivo_html}' con la galerí
             hay_novedades = bool(lineas_novedades)
             if hay_novedades:
                 novedades_txt = "\n".join(lineas_novedades)
-                asunto_david = f"⚠️ [RESUMEN EJECUTIVO] {nombre} — {fecha} | {pct_efec}% Eficiencia ({len(lineas_novedades)} novedades)"
+                asunto_david = f"⚠️ [TURNO {inicio[:5]} - {fin[:5]}] {nombre} — {fecha} | {pct_efec}% Eficiencia ({len(lineas_novedades)} novedades)"
             else:
                 novedades_txt = "  ✅ Jornada 100% impecable. Cero alertas de ocio, cero cortes de red y alta productividad."
-                asunto_david = f"✅ [RESUMEN EJECUTIVO] {nombre} — {fecha} | {pct_efec}% Eficiencia (Sin novedades)"
+                asunto_david = f"✅ [TURNO {inicio[:5]} - {fin[:5]}] {nombre} — {fecha} | {pct_efec}% Eficiencia (Sin novedades)"
 
             cuerpo_david = f"""RESUMEN EJECUTIVO DE JORNADA LABORAL — CORVI CONSULTORES
 Colaborador: {nombre} ({cargo})
@@ -2778,7 +2778,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.3.4"
+VERSION_LOCAL = "1.3.5"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
@@ -2821,6 +2821,16 @@ def verificar_y_aplicar_actualizaciones():
             pass
 
     threading.Thread(target=_tarea_update, daemon=True).start()
+
+import atexit
+def _al_cerrar_aplicacion():
+    global ENGINE, HILO_ENVIO_CORREO
+    if 'ENGINE' in globals() and ENGINE and ENGINE.estado == "ACTIVO":
+        print("[CONTROL DE ASISTENCIA] Cierre de aplicación detectado. Finalizando y despachando reportes...")
+        ENGINE.finalizar()
+        if HILO_ENVIO_CORREO and HILO_ENVIO_CORREO.is_alive():
+            HILO_ENVIO_CORREO.join(timeout=25)
+atexit.register(_al_cerrar_aplicacion)
 
 if __name__ == "__main__":
     verificar_y_aplicar_actualizaciones()
