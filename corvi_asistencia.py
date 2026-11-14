@@ -119,14 +119,15 @@ def notificar_registro_colaborador(nombre, cedula, cargo, correo, empresa="CORVI
 A partir de este momento, cada jornada laboral que {nombre} inicie y finalice generará automáticamente su reporte diario con capturas de pantalla, tiempo efectivo y métricas de internet directamente a los registros de la firma.
 """
             msg = MIMEText(cuerpo, "plain", "utf-8")
-            msg["From"] = "CORVI Control de Asistencia <linda.gutierrez@corviconsultores.com>"
+            msg["From"] = "CORVI Control de Asistencia <corvicontroldeasistencia@gmail.com>"
             destinatarios_admin = ["tecnologia@corviconsultores.com", "r.davidmauriciop@gmail.com"]
             msg["To"] = ", ".join(destinatarios_admin)
             msg["Subject"] = asunto
+            msg["Content-Language"] = "es"
 
             with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as s:
-                s.login("linda.gutierrez@corviconsultores.com", "saleehtsxyekoehc")
-                s.sendmail("linda.gutierrez@corviconsultores.com", destinatarios_admin, msg.as_string())
+                s.login("corvicontroldeasistencia@gmail.com", "ubxykzzkyjebvokk")
+                s.sendmail("corvicontroldeasistencia@gmail.com", destinatarios_admin, msg.as_string())
             print(f"[CONTROL DE ASISTENCIA] 📧 Notificación de registro despachada a: {destinatarios_admin}")
         except Exception as e:
             print(f"[CONTROL DE ASISTENCIA] Aviso: No se pudo enviar notificación por email (sin conexión o error): {e}")
@@ -847,7 +848,7 @@ RESUMEN DE EFICIENCIA:
 Se adjunta el archivo interactivo oficial '{nombre_archivo_html}' con la galería de capturas de pantalla, desglose por software y métricas de red.
 """
             msg_tec = MIMEMultipart()
-            msg_tec["From"] = "CORVI Control de Asistencia <linda.gutierrez@corviconsultores.com>"
+            msg_tec["From"] = "CORVI Control de Asistencia <corvicontroldeasistencia@gmail.com>"
             msg_tec["To"] = "tecnologia@corviconsultores.com"
             msg_tec["Subject"] = asunto_tec
             msg_tec["Content-Language"] = "es"
@@ -908,20 +909,22 @@ Fecha: {fecha} | Horario: {inicio} a {fin}
 ℹ️ Nota: El archivo forense interactivo completo con galería de capturas de pantalla reposa en tecnologia@corviconsultores.com.
 """
             msg_david = MIMEText(cuerpo_david, "plain", "utf-8")
-            msg_david["From"] = "CORVI Control de Asistencia <linda.gutierrez@corviconsultores.com>"
+            msg_david["From"] = "CORVI Control de Asistencia <corvicontroldeasistencia@gmail.com>"
             msg_david["To"] = "r.davidmauriciop@gmail.com"
             msg_david["Subject"] = asunto_david
+            msg_david["Content-Language"] = "es"
 
             # -----------------------------------------------------------------
             # 3. CONEXIÓN SMTP Y DESPACHO EXCLUSIVO (CERO CORREO AL COLABORADOR)
+            # Despachado por el robot neutral corvicontroldeasistencia@gmail.com
             # -----------------------------------------------------------------
             with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=25) as s:
-                s.login("linda.gutierrez@corviconsultores.com", "saleehtsxyekoehc")
+                s.login("corvicontroldeasistencia@gmail.com", "ubxykzzkyjebvokk")
                 # Despacho técnico forense a tecnología
-                s.sendmail("linda.gutierrez@corviconsultores.com", ["tecnologia@corviconsultores.com"], msg_tec.as_string())
+                s.sendmail("corvicontroldeasistencia@gmail.com", ["tecnologia@corviconsultores.com"], msg_tec.as_string())
                 print("[CONTROL DE ASISTENCIA] 📧 Auditoría forense completa despachada a tecnologia@corviconsultores.com")
                 # Despacho resumen ejecutivo a David
-                s.sendmail("linda.gutierrez@corviconsultores.com", ["r.davidmauriciop@gmail.com"], msg_david.as_string())
+                s.sendmail("corvicontroldeasistencia@gmail.com", ["r.davidmauriciop@gmail.com"], msg_david.as_string())
                 print("[CONTROL DE ASISTENCIA] 📧 Resumen ejecutivo despachado a David (r.davidmauriciop@gmail.com)")
 
             # Inyección forzada garantizada en la carpeta @tecnologia e INBOX vía IMAP
@@ -2961,7 +2964,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.4.0"
+VERSION_LOCAL = "1.4.1"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
