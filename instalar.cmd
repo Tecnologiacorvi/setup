@@ -8,22 +8,22 @@ echo                CORVI CONSULTORES S.A.S.
 echo ============================================================
 echo.
 
-:: 1. Detener procesos previos y limpiar accesos viejos de pruebas anteriores
+:: 1. Detener procesos previos
 echo [*] Preparando entorno y liberando puertos...
 taskkill /F /IM python.exe /FI "WINDOWTITLE eq *CORVI*" >nul 2>&1
 taskkill /F /IM pythonw.exe >nul 2>&1
 
-:: Limpiar residuos viejos de NSIS en el Menu Inicio (evita el error de uninst.exe)
+:: Limpiar residuos viejos de NSIS en el Menu Inicio
 if exist "%APPDATA%\Microsoft\Windows\Start Menu\Programs\CORVI" (
     rmdir /s /q "%APPDATA%\Microsoft\Windows\Start Menu\Programs\CORVI" >nul 2>&1
 )
 
-:: 2. Crear directorio de instalacion en AppData local del usuario
+:: 2. Directorio de instalacion en AppData local del usuario
 set "INSTALL_DIR=%LOCALAPPDATA%\CORVI_Asistencia"
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
-:: 3. Descargar componentes oficiales directamente desde la nube CORVI (100%% publico, cero tokens)
-echo [*] Descargando componentes del sistema...
+:: 3. Descargar componentes oficiales de CORVI directamente (sin tokens)
+echo [*] Descargando aplicacion CORVI...
 set "BASE_URL=https://raw.githubusercontent.com/Tecnologiacorvi/setup/main"
 
 curl.exe -sL "%BASE_URL%/corvi_asistencia.py" -o "%INSTALL_DIR%\corvi_asistencia.py"
@@ -31,31 +31,50 @@ curl.exe -sL "%BASE_URL%/iniciar_asistencia.vbs" -o "%INSTALL_DIR%\iniciar_asist
 curl.exe -sL "%BASE_URL%/icono_corvi.ico" -o "%INSTALL_DIR%\icono_corvi.ico"
 curl.exe -sL "%BASE_URL%/version.json" -o "%INSTALL_DIR%\version.json"
 
-:: 4. Garantizar presencia del motor propio de Python de CORVI (Cero dependencias)
-if not exist "%INSTALL_DIR%\python\pythonw.exe" (
-    echo [*] Descargando motor de ejecucion oficial CORVI (18 MB, espere unos segundos)...
-    if not exist "%INSTALL_DIR%\python" mkdir "%INSTALL_DIR%\python"
-    
-    curl.exe -L --progress-bar "%BASE_URL%/corvi_python_runtime.tar.gz" -o "%INSTALL_DIR%\runtime.tar.gz"
-    
-    echo [*] Extrayendo motor de ejecucion...
-    pushd "%INSTALL_DIR%\python"
-    tar.exe -xzf "%INSTALL_DIR%\runtime.tar.gz" >nul 2>&1
-    popd
-    
-    del /f /q "%INSTALL_DIR%\runtime.tar.gz" >nul 2>&1
+:: 4. Validar si el equipo ya tiene Python o instalar la version oficial silenciosa
+set "PYTHON_FOUND=0"
+set "PY_BIN="
+
+if exist "%INSTALL_DIR%\python\pythonw.exe" (
+    set "PYTHON_FOUND=1"
+    set "PY_BIN=%INSTALL_DIR%\python\python.exe"
+) else if exist "%LOCALAPPDATA%\Programs\Python\Python311\pythonw.exe" (
+    set "PYTHON_FOUND=1"
+    set "PY_BIN=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+) else if exist "%LOCALAPPDATA%\Programs\Python\Python312\pythonw.exe" (
+    set "PYTHON_FOUND=1"
+    set "PY_BIN=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+) else if exist "C:\Python311\pythonw.exe" (
+    set "PYTHON_FOUND=1"
+    set "PY_BIN=C:\Python311\python.exe"
 )
 
-:: Verificar que el motor quedo listo
-if not exist "%INSTALL_DIR%\python\pythonw.exe" (
+if "!PYTHON_FOUND!"=="0" (
     echo.
-    echo [ERROR] No se pudo configurar el motor de ejecucion.
-    echo Verifique su conexion a internet e intente nuevamente.
-    pause
-    exit /b 1
+    echo [*] Configurando motor oficial de Python en su equipo...
+    echo [*] Descargando instalador certificado de Python 3.11 (25 MB)...
+    
+    curl.exe -L --progress-bar "https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe" -o "%TEMP%\python_setup.exe"
+    
+    echo [*] Instalando motor de Python silenciosamente (espere unos 15 segundos)...
+    start /wait "" "%TEMP%\python_setup.exe" /quiet InstallAllUsers=0 PrependPath=1 Include_test=0 SimpleInstall=1
+    del /f /q "%TEMP%\python_setup.exe" >nul 2>&1
+    
+    if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
+        set "PY_BIN=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+        set "PYTHON_FOUND=1"
+    )
 )
 
-:: 5. Crear acceso directo en el Escritorio REAL (detecta OneDrive y carpetas en espanol)
+:: 5. Instalar soporte de dependencias graficas
+if defined PY_BIN (
+    if exist "!PY_BIN!" (
+        echo [*] Verificando dependencias del sistema...
+        "!PY_BIN!" -m pip install Pillow --quiet >nul 2>&1
+    )
+)
+
+:: 6. Crear acceso directo en el Escritorio con logo oficial de CORVI
 echo [*] Creando acceso directo en el Escritorio con logo oficial...
 set "VBS_SHORTCUT=%TEMP%\create_corvi_shortcut_%RANDOM%.vbs"
 (
@@ -81,10 +100,10 @@ echo oLink2.Save
 cscript //nologo "%VBS_SHORTCUT%" >nul 2>&1
 del /f /q "%VBS_SHORTCUT%" >nul 2>&1
 
-:: Forzar refresco visual de iconos en el explorador de Windows
+:: Refrescar iconos de Windows
 ie4uinit.exe -show >nul 2>&1
 
-:: 6. Iniciar la aplicacion de forma 100% silenciosa en segundo plano (sin consolas)
+:: 7. Iniciar la aplicacion de forma discreta en segundo plano
 echo [*] Iniciando panel de control de asistencia...
 cd /d "%INSTALL_DIR%"
 start "" wscript.exe "%INSTALL_DIR%\iniciar_asistencia.vbs"
