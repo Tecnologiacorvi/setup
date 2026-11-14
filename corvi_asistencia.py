@@ -2361,9 +2361,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         <div class="status-bar">
             <div>
                 <span id="badgeEstado" class="badge detenido">⚪ DETENIDO</span>
+                <div id="horaEntradaTag" style="font-size: 11px; color: #64748b; margin-top: 5px; font-weight: 600;">Entrada: --:--:--</div>
             </div>
             <div class="time-display">
-                <span>Tiempo Laborado</span>
+                <span id="labelReloj">⏱️ TIEMPO EN VIVO</span>
                 <strong id="cronometro">00:00:00</strong>
             </div>
         </div>
@@ -2445,6 +2446,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 const btnStart = document.getElementById('btnStart');
                 const btnPause = document.getElementById('btnPause');
                 const btnStop = document.getElementById('btnStop');
+
+                const entradaEl = document.getElementById('horaEntradaTag');
+                if (entradaEl) {
+                    if (data.hora_inicio && data.hora_inicio !== '--:--:--') {
+                        entradaEl.innerText = `Entrada: ${data.hora_inicio}`;
+                    } else {
+                        entradaEl.innerText = `Entrada: Pendiente`;
+                    }
+                }
 
                 estadoActual = data.estado;
                 segundosBase = data.segundos_efectivos;
