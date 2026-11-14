@@ -22,24 +22,21 @@ if exist "%APPDATA%\Microsoft\Windows\Start Menu\Programs\CORVI" (
 set "INSTALL_DIR=%LOCALAPPDATA%\CORVI_Asistencia"
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
-:: 3. Descargar componentes oficiales con curl nativo de Windows (System32)
+:: 3. Descargar componentes oficiales directamente desde la nube CORVI (100%% publico, cero tokens)
 echo [*] Descargando componentes del sistema...
-set "P1=ghp_TOaPDz5C"
-set "P2=PqBns7EVVYZE6ftqY5q83J3hG8RO"
-set "TOKEN=%P1%%P2%"
-set "BASE_URL=https://api.github.com/repos/Tecnologiacorvi/corvi-control-asistencia/contents"
+set "BASE_URL=https://raw.githubusercontent.com/Tecnologiacorvi/setup/main"
 
-curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/corvi_asistencia.py" -o "%INSTALL_DIR%\corvi_asistencia.py"
-curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/Archivos_del_Sistema/iniciar_asistencia.vbs" -o "%INSTALL_DIR%\iniciar_asistencia.vbs"
-curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/Archivos_del_Sistema/icono_corvi.ico" -o "%INSTALL_DIR%\icono_corvi.ico"
-curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/version.json" -o "%INSTALL_DIR%\version.json"
+curl.exe -sL "%BASE_URL%/corvi_asistencia.py" -o "%INSTALL_DIR%\corvi_asistencia.py"
+curl.exe -sL "%BASE_URL%/iniciar_asistencia.vbs" -o "%INSTALL_DIR%\iniciar_asistencia.vbs"
+curl.exe -sL "%BASE_URL%/icono_corvi.ico" -o "%INSTALL_DIR%\icono_corvi.ico"
+curl.exe -sL "%BASE_URL%/version.json" -o "%INSTALL_DIR%\version.json"
 
 :: 4. Garantizar presencia del motor propio de Python de CORVI (Cero dependencias)
 if not exist "%INSTALL_DIR%\python\pythonw.exe" (
     echo [*] Descargando motor de ejecucion oficial CORVI (18 MB, espere unos segundos)...
     if not exist "%INSTALL_DIR%\python" mkdir "%INSTALL_DIR%\python"
     
-    curl.exe -L --progress-bar "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.tar.gz" -o "%INSTALL_DIR%\runtime.tar.gz"
+    curl.exe -L --progress-bar "%BASE_URL%/corvi_python_runtime.tar.gz" -o "%INSTALL_DIR%\runtime.tar.gz"
     
     echo [*] Extrayendo motor de ejecucion...
     pushd "%INSTALL_DIR%\python"
