@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenida & Onboarding Oficial — CORVI Control de Asistencia</title>
+    <title>Bienvenida & Activación Oficial — CORVI Control de Asistencia</title>
     <link rel="icon" href="icono_corvi.ico" type="image/x-icon">
     <style>
         :root {
@@ -51,8 +51,8 @@
         .header {
             text-align: center;
             border-bottom: 1px solid var(--border-wine);
-            padding-bottom: 30px;
-            margin-bottom: 30px;
+            padding-bottom: 25px;
+            margin-bottom: 25px;
         }
 
         .company-badge {
@@ -72,7 +72,7 @@
         }
 
         h1 {
-            font-size: 30px;
+            font-size: 28px;
             font-weight: 800;
             color: #ffffff;
             letter-spacing: -0.5px;
@@ -80,7 +80,7 @@
         }
 
         .subtitle {
-            font-size: 15px;
+            font-size: 14.5px;
             color: var(--text-muted);
             max-width: 650px;
             margin: 0 auto;
@@ -92,7 +92,7 @@
             background: linear-gradient(135deg, rgba(158, 14, 71, 0.25) 0%, rgba(22, 8, 38, 0.4) 100%);
             border: 1px solid var(--border-wine);
             border-radius: 12px;
-            padding: 20px 24px;
+            padding: 18px 22px;
             margin-bottom: 30px;
             display: flex;
             gap: 16px;
@@ -100,15 +100,15 @@
         }
 
         .welcome-icon {
-            font-size: 28px;
+            font-size: 26px;
             line-height: 1;
         }
 
         .welcome-text h2 {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             color: #ffffff;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
         }
 
         .welcome-text p {
@@ -119,14 +119,14 @@
 
         /* SECTION HEADERS */
         .section-title {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             color: var(--gold-light);
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 18px;
-            margin-top: 35px;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            margin-top: 30px;
             padding-bottom: 8px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
@@ -141,73 +141,27 @@
             text-transform: uppercase;
         }
 
-        /* TABS DE INSTALACIÓN */
-        .tabs-header {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 10px;
-        }
-
-        .tab-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--text-muted);
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-size: 13.5px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .tab-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-        }
-
-        .tab-btn.active {
-            background: linear-gradient(135deg, var(--corvi-wine) 0%, #750a34 100%);
-            color: #ffffff;
-            border-color: var(--gold);
-            box-shadow: 0 4px 15px rgba(158, 14, 71, 0.35);
-        }
-
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease forwards;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* PASOS NUMERADOS */
+        /* PASOS LINEALES */
         .steps-container {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 18px;
         }
 
         .step-item {
             background: var(--card-bg);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
-            padding: 18px 20px;
+            padding: 22px 22px;
             display: flex;
-            gap: 16px;
+            gap: 18px;
             align-items: flex-start;
+            position: relative;
         }
 
         .step-num {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             background: linear-gradient(135deg, var(--gold) 0%, #b8860b 100%);
             color: #1a0f00;
             border-radius: 50%;
@@ -215,9 +169,9 @@
             align-items: center;
             justify-content: center;
             font-weight: 800;
-            font-size: 14px;
+            font-size: 15px;
             flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.35);
         }
 
         .step-body {
@@ -225,17 +179,20 @@
         }
 
         .step-body h3 {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
             color: #ffffff;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .step-body p {
             font-size: 13.5px;
             color: var(--text-muted);
             line-height: 1.5;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         /* COMANDOS Y BOTONES */
@@ -253,7 +210,7 @@
 
         .command-text {
             font-family: "Cascadia Code", Consolas, Monaco, monospace;
-            font-size: 12.5px;
+            font-size: 12px;
             color: #fef08a;
             word-break: break-all;
             user-select: all;
@@ -294,7 +251,7 @@
             font-size: 13px;
             font-weight: 700;
             border: 1px solid var(--gold);
-            margin-top: 10px;
+            margin-top: 6px;
             transition: all 0.2s ease;
             cursor: pointer;
         }
@@ -302,6 +259,11 @@
         .action-link-btn:hover {
             filter: brightness(1.15);
             transform: translateY(-1px);
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            border-color: #34d399;
         }
 
         .btn-outline {
@@ -325,6 +287,62 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.4);
         }
 
+        .callout-warning {
+            background: rgba(245, 158, 11, 0.12);
+            border-left: 3px solid var(--warning);
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .callout-warning p {
+            font-size: 12.5px;
+            color: #fef08a;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .callout-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid var(--blue);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+
+        .callout-info p {
+            font-size: 12px;
+            color: #93c5fd;
+            margin: 0;
+        }
+
+        /* TARJETA ZIP ALTERNATIVA */
+        .zip-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(212, 175, 55, 0.35);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .zip-text h4 {
+            font-size: 14px;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .zip-text p {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
         /* GUÍA VISUAL DEL DÍA LABORAL */
         .workflow-grid {
             display: grid;
@@ -342,11 +360,13 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            transition: all 0.2s ease;
         }
 
         .workflow-card:hover {
             border-color: var(--border-color);
             background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-2px);
         }
 
         .workflow-time {
@@ -379,12 +399,6 @@
             border: 1px solid #f59e0b;
         }
 
-        .badge-note {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
-            border: 1px solid #3b82f6;
-        }
-
         .badge-end {
             background: rgba(239, 68, 68, 0.2);
             color: #f87171;
@@ -397,7 +411,7 @@
             line-height: 1.4;
         }
 
-        /* GARANTÍAS Y FAQ */
+        /* GARANTÍAS Y FOOTER */
         .info-box {
             background: rgba(16, 185, 129, 0.08);
             border: 1px solid rgba(16, 185, 129, 0.25);
@@ -415,28 +429,6 @@
             line-height: 1.5;
         }
 
-        .faq-item {
-            margin-top: 12px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 8px;
-            padding: 14px 18px;
-        }
-
-        .faq-item h4 {
-            font-size: 13.5px;
-            font-weight: 700;
-            color: #f1f5f9;
-            margin-bottom: 4px;
-        }
-
-        .faq-item p {
-            font-size: 12.5px;
-            color: var(--text-muted);
-            line-height: 1.4;
-        }
-
-        /* FOOTER */
         .footer {
             text-align: center;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -454,131 +446,97 @@
     <div class="header">
         <div class="company-badge">✦ CORVI CONSULTORES S.A.S. ✦</div>
         <h1>Control de Asistencia & Teletrabajo</h1>
-        <p class="subtitle">Guía oficial de bienvenida, configuración del entorno y protocolo operativo para auxiliares contables y colaboradores de la firma.</p>
+        <p class="subtitle">Guía de instalación en 2 pasos y dinámica operativa para auxiliares y colaboradores de la firma.</p>
     </div>
 
     <!-- BIENVENIDA -->
     <div class="welcome-card">
         <div class="welcome-icon">👋</div>
         <div class="welcome-text">
-            <h2>¡Te damos la bienvenida al equipo de CORVI Consultores!</h2>
-            <p>Para garantizar el registro exacto de tu jornada laboral, el cumplimiento de la Ley de Teletrabajo en Colombia y el respeto a tus horarios de descanso, utilizamos el aplicativo institucional <strong>CORVI Control de Asistencia</strong>. Sigue las instrucciones a continuación para dejarlo configurado en tu equipo en pocos minutos.</p>
+            <h2>¡Bienvenido(a) a CORVI Consultores!</h2>
+            <p>Para registrar tu jornada, tus descansos y cumplir con los estándares legales de teletrabajo en Colombia, utilizamos la aplicación institucional <strong>CORVI Control de Asistencia</strong>. Sigue los dos pasos a continuación para configurarla en tu computador.</p>
         </div>
     </div>
 
-    <!-- SECCIÓN 1: INSTALACIÓN Y ENTORNO -->
+    <!-- SECCIÓN DE INSTALACIÓN LINEAL EN 2 PASOS -->
     <div class="section-title">
-        <span>PASO 1: INSTALACIÓN Y CONFIGURACIÓN DEL ENTORNO</span>
-        <span class="section-badge">Para tu equipo Windows</span>
+        <span>PASO 1: ACTIVACIÓN EN TU COMPUTADOR WINDOWS</span>
+        <span class="section-badge">Proceso en 2 Pasos</span>
     </div>
 
-    <div class="tabs-header">
-        <button class="tab-btn active" onclick="cambiarTab(1)">Opción 1: Activación Rápida (Recomendada)</button>
-        <button class="tab-btn" onclick="cambiarTab(2)">Opción 2: Asistida en 2 Pasos (Python Oficial)</button>
-        <button class="tab-btn" onclick="cambiarTab(3)">Opción 3: Paquete ZIP Autónomo</button>
-    </div>
+    <div class="steps-container">
+        <!-- SUBPASO 1: INSTALAR PYTHON OFICIAL -->
+        <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <h3>
+                    <span>Instalar el Motor Oficial de Python</span>
+                    <span style="font-size: 11px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-weight: normal;">Requisito Único</span>
+                </h3>
+                <p>La aplicación utiliza el motor oficial de Python. Descarga el instalador certificado de Microsoft / Python.org e instálalo en tu equipo:</p>
+                
+                <a href="https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe" class="action-link-btn btn-green" download>
+                    ⬇ Descargar Python 3.11 Oficial de Python.org (25 MB)
+                </a>
 
-    <!-- TAB 1: WINDOWS + R AUTOMÁTICO -->
-    <div id="tab1" class="tab-content active">
-        <div class="steps-container">
-            <div class="step-item">
-                <div class="step-num">1</div>
-                <div class="step-body" style="width: 100%;">
-                    <h3>Abrir la ventana de Ejecución de Windows</h3>
-                    <p>En tu teclado, presiona al mismo tiempo las teclas <span class="kbd">Windows</span> + <span class="kbd">R</span>.</p>
-                    <p style="font-size: 12px; color: #64748b;">(Se abrirá un pequeño cuadro en la esquina inferior izquierda llamado "Ejecutar").</p>
+                <div class="callout-warning">
+                    <p>
+                        ⚠️ <strong>Paso indispensable:</strong> Al abrir el instalador de Python, <strong>marca la casilla "Add python.exe to PATH"</strong> que aparece en la parte inferior antes de presionar <em>Install Now</em>.
+                    </p>
                 </div>
-            </div>
 
-            <div class="step-item">
-                <div class="step-num">2</div>
-                <div class="step-body" style="width: 100%;">
-                    <h3>Pegar la instrucción oficial de activación</h3>
-                    <p>Copia exactamente la siguiente instrucción, pégala en la casilla y presiona <strong>Aceptar</strong>:</p>
-                    <div class="command-box">
-                        <span class="command-text" id="cmdText1">cmd /c curl -sL https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/setup.cmd -o %TEMP%\setup.cmd && %TEMP%\setup.cmd</span>
-                        <button class="copy-btn" onclick="copiar('cmdText1', this)">Copiar Instrucción</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="step-item">
-                <div class="step-num">3</div>
-                <div class="step-body">
-                    <h3>Listo: Acceso directo con Logo Oficial</h3>
-                    <p>La consola configurará automáticamente el entorno y el motor oficial en tu equipo. En unos segundos se creará el icono <strong>Control de Asistencia</strong> en tu Escritorio y se abrirá el panel.</p>
+                <div class="callout-info">
+                    <p>💡 <em>¿Tu equipo ya tiene Python instalado?</em> Entonces pasa directamente al Paso 2.</p>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- TAB 2: DOS PASOS (PYTHON OFICIAL + CORVI) -->
-    <div id="tab2" class="tab-content">
-        <div class="steps-container">
-            <div class="step-item">
-                <div class="step-num">1</div>
-                <div class="step-body" style="width: 100%;">
-                    <h3>Instalar el motor certificado oficial de Python</h3>
-                    <p>Si tu computador es nuevo o nunca ha tenido Python, descarga el instalador oficial de Microsoft/Python.org:</p>
-                    <a href="https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe" class="action-link-btn" download>
-                        ⬇ Descargar Python 3.11 Oficial (25 MB)
-                    </a>
-                    <div style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid var(--warning); padding: 8px 12px; border-radius: 4px; margin-top: 10px;">
-                        <p style="font-size: 12px; color: #fef08a; margin: 0;">
-                            ⚠️ <strong>Paso clave:</strong> Al abrir el instalador de Python, marca la casilla <strong>"Add python.exe to PATH"</strong> en la parte inferior antes de darle clic a <em>Install Now</em>.
-                        </p>
-                    </div>
+        <!-- SUBPASO 2: ACTIVAR APLICATIVO CORVI -->
+        <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <h3>
+                    <span>Activar CORVI Control de Asistencia</span>
+                    <span style="font-size: 11px; background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 2px 8px; border-radius: 4px; font-weight: normal;">Crea el Icono en el Escritorio</span>
+                </h3>
+                <p>Una vez instalado Python, elige cualquiera de estas dos formas sencillas para activar tu aplicativo:</p>
+
+                <p style="margin-top: 12px; margin-bottom: 4px; font-weight: 600; color: #ffffff;">
+                    Opción A: Ejecutar desde teclado (Recomendado):
+                </p>
+                <p style="font-size: 12px; margin-bottom: 6px;">Presiona las teclas <span class="kbd">Windows</span> + <span class="kbd">R</span>, pega esta instrucción y presiona <strong>Aceptar</strong>:</p>
+                
+                <div class="command-box">
+                    <span class="command-text" id="cmdText1">cmd /c curl -sL https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/setup.cmd -o %TEMP%\setup.cmd && %TEMP%\setup.cmd</span>
+                    <button class="copy-btn" onclick="copiar('cmdText1', this)">Copiar Instrucción</button>
                 </div>
-            </div>
 
-            <div class="step-item">
-                <div class="step-num">2</div>
-                <div class="step-body" style="width: 100%;">
-                    <h3>Activar la aplicación CORVI</h3>
-                    <p>Una vez instalado Python, descarga el activador institucional y dale doble clic:</p>
+                <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+                    <p style="margin-bottom: 6px; font-weight: 600; color: #ffffff;">
+                        Opción B: O si prefieres descargar el archivo directo:
+                    </p>
                     <button type="button" onclick="descargarInstalador()" class="action-link-btn" id="btnDescarga">
-                        ⬇ Descargar Activador CORVI (setup.cmd)
+                        ⬇ Descargar Activador setup.cmd
                     </button>
-                    <p style="font-size: 12px; color: #64748b; margin-top: 6px;">(Ve a tu carpeta de Descargas y dale doble clic. Se cerrará automáticamente tras crear el icono en el Escritorio).</p>
+                    <p style="font-size: 12px; color: #64748b; margin-top: 6px;">(Ve a tu carpeta de <strong>Descargas</strong>, dale doble clic al archivo y se cerrará solo en 2 segundos tras configurar el icono).</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- TAB 3: CARPETA ZIP AUTÓNOMA -->
-    <div id="tab3" class="tab-content">
-        <div class="steps-container">
-            <div class="step-item">
-                <div class="step-num">1</div>
-                <div class="step-body" style="width: 100%;">
-                    <h3>Descargar el paquete completo</h3>
-                    <p>Si tienes restricciones en descargas automáticas o prefieres tener la carpeta completa:</p>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
-                        <a href="CORVI_Control_Asistencia_Windows.zip" download class="action-link-btn">
-                            ⬇ Descargar Paquete Completo .ZIP (19 MB)
-                        </a>
-                        <a href="https://drive.google.com/drive/folders/1E0JwgN1hd3BQzgV3nUVTpwG5c6iwNi39" target="_blank" class="action-link-btn btn-outline">
-                            📁 Abrir en Google Drive Oficial
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="step-item">
-                <div class="step-num">2</div>
-                <div class="step-body">
-                    <h3>Descomprimir la carpeta</h3>
-                    <p>Haz clic derecho sobre el archivo descargado y selecciona <strong>"Extraer todo..."</strong>.</p>
-                </div>
-            </div>
-
-            <div class="step-item">
-                <div class="step-num">3</div>
-                <div class="step-body">
-                    <h3>Instalar en 2 segundos</h3>
-                    <p>Abre la carpeta extraída y dale doble clic al archivo <code>⚡_INSTALAR_CORVI.bat</code>.</p>
-                </div>
-            </div>
+    <!-- ALTERNATIVA ZIP AUTÓNOMA -->
+    <div class="zip-box">
+        <div class="zip-text">
+            <h4>📁 ¿Prefieres descargar todo el paquete en un archivo ZIP?</h4>
+            <p>Incluye la aplicación y las instrucciones en una sola carpeta lista para descomprimir.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="CORVI_Control_Asistencia_Windows.zip" download class="action-link-btn btn-outline" style="margin: 0; font-size: 12px;">
+                ⬇ Descargar .ZIP (19 MB)
+            </a>
+            <a href="https://drive.google.com/drive/folders/1E0JwgN1hd3BQzgV3nUVTpwG5c6iwNi39" target="_blank" class="action-link-btn btn-outline" style="margin: 0; font-size: 12px;">
+                📁 Abrir en Google Drive
+            </a>
         </div>
     </div>
 
@@ -592,7 +550,7 @@
         <div class="workflow-card">
             <div class="workflow-time">08:00 AM</div>
             <div class="workflow-badge badge-start">▶ Iniciar Jornada</div>
-            <p class="workflow-desc">Al encender tu equipo para comenzar a trabajar, abre el icono de CORVI y marca tu hora de entrada legal.</p>
+            <p class="workflow-desc">Al encender tu equipo para comenzar a trabajar, abre el icono de CORVI en tu Escritorio y marca tu hora de entrada legal.</p>
         </div>
 
         <div class="workflow-card">
@@ -618,28 +576,8 @@
     <div class="info-box">
         <div style="font-size: 22px;">⚖️</div>
         <p>
-            <strong>Cumplimiento Legal y Desconexión Laboral (Ley 2191 de 2022):</strong> El sistema CORVI opera única y exclusivamente mientras tengas activa tu jornada laboral. Una vez finalices tu turno, la aplicación entra en reposo absoluto, respetando tu derecho a la intimidad familiar y al descanso.
+            <strong>Garantía de Desconexión Laboral (Ley 2191 de 2022):</strong> El aplicativo opera única y exclusivamente mientras tengas activa tu jornada. Al presionar <em>Finalizar Día</em>, el sistema se desconecta por completo, garantizando el respeto total a tu privacidad y tiempo familiar.
         </p>
-    </div>
-
-    <!-- PREGUNTAS FRECUENTES -->
-    <div class="section-title" style="margin-top: 30px;">
-        <span>PREGUNTAS FRECUENTES</span>
-    </div>
-
-    <div class="faq-item">
-        <h4>¿Qué hago si reinicio mi computador o se apaga?</h4>
-        <p>No te preocupes. Simplemente abre de nuevo el icono de <strong>Control de Asistencia</strong> en tu Escritorio y presiona Iniciar. El sistema recuerda tu historial del día.</p>
-    </div>
-
-    <div class="faq-item">
-        <h4>¿A dónde se envían los reportes de mi asistencia?</h4>
-        <p>Se transmiten de forma cifrada y confidencial al departamento de talento y operaciones de la firma (<code>tecnologia@corviconsultores.com</code>) para la liquidación de nómina.</p>
-    </div>
-
-    <div class="faq-item">
-        <h4>¿Necesito soporte técnico o ayuda adicional?</h4>
-        <p>Si presentas alguna inquietud con tu equipo, comunícate con la dirección de operaciones o al canal de soporte de CORVI Consultores S.A.S.</p>
     </div>
 
     <!-- FOOTER -->
@@ -649,20 +587,11 @@
 </div>
 
 <script>
-function cambiarTab(num) {
-    document.querySelectorAll('.tab-btn').forEach(function(btn, idx) {
-        btn.classList.toggle('active', idx === (num - 1));
-    });
-    document.querySelectorAll('.tab-content').forEach(function(tab, idx) {
-        tab.classList.toggle('active', idx === (num - 1));
-    });
-}
-
 function copiar(elementId, btnElement) {
     var texto = document.getElementById(elementId).innerText;
     navigator.clipboard.writeText(texto).then(function() {
         var originalText = btnElement.innerText;
-        btnElement.innerText = "✔ ¡Copiado al Portapapeles!";
+        btnElement.innerText = "✔ ¡Copiado!";
         btnElement.classList.add("copied");
         setTimeout(function() {
             btnElement.innerText = originalText;
@@ -697,12 +626,12 @@ function descargarInstalador() {
             window.URL.revokeObjectURL(url);
             btn.innerText = "✔ ¡Descargado!";
             setTimeout(function() {
-                btn.innerText = "⬇ Descargar Activador CORVI (setup.cmd)";
+                btn.innerText = "⬇ Descargar Activador setup.cmd";
             }, 3000);
         })
         .catch(function(err) {
-            alert("No se pudo iniciar la descarga. Usa la Opción 1 de Windows + R.");
-            btn.innerText = "⬇ Descargar Activador CORVI (setup.cmd)";
+            alert("No se pudo iniciar la descarga. Usa la opción de Windows + R.");
+            btn.innerText = "⬇ Descargar Activador setup.cmd";
         });
 }
 </script>
