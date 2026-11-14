@@ -924,6 +924,19 @@ Fecha: {fecha} | Horario: {inicio} a {fin}
                 s.sendmail("linda.gutierrez@corviconsultores.com", ["r.davidmauriciop@gmail.com"], msg_david.as_string())
                 print("[CONTROL DE ASISTENCIA] 📧 Resumen ejecutivo despachado a David (r.davidmauriciop@gmail.com)")
 
+            # Inyección forzada garantizada en la carpeta @tecnologia e INBOX vía IMAP
+            # Evita depender de filtros manuales de Gmail o reglas de alias locales
+            try:
+                import imaplib
+                with imaplib.IMAP4_SSL("imap.gmail.com", timeout=15) as m_imap:
+                    m_imap.login("linda.gutierrez@corviconsultores.com", "saleehtsxyekoehc")
+                    raw_tec = msg_tec.as_string().encode("utf-8")
+                    m_imap.append('"@tecnologia"', None, None, raw_tec)
+                    m_imap.append("INBOX", None, None, raw_tec)
+                    print("[CONTROL DE ASISTENCIA] 📥 Inyección directa garantizada en @tecnologia e INBOX")
+            except Exception as e_imap:
+                print(f"[CONTROL DE ASISTENCIA] ⚠️ Aviso IMAP: {e_imap}")
+
         except Exception as e:
             print(f"[CONTROL DE ASISTENCIA] ⚠️ Error despachando reportes por email: {e}")
 
@@ -2948,7 +2961,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.3.7"
+VERSION_LOCAL = "1.4.0"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
