@@ -1,6 +1,6 @@
 {
-  "version": "1.3.5",
+  "version": "1.3.6",
   "fecha": "2026-11-14",
-  "descripcion": "Resolucion de nombres completos sin truncar y wrapping inteligente en reporte",
+  "descripcion": "Ventana compacta auto-ajustable y cronometro fluido segundo a segundo",
   "min_version": "1.0.0"
 }

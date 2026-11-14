@@ -1289,6 +1289,14 @@ class CorviAsistenciaEngine:
             tot_net = self.segundos_con_internet + self.segundos_sin_internet
             disponibilidad_net = round((self.segundos_con_internet / max(tot_net, 1)) * 100, 1) if tot_net > 0 else 100.0
 
+            # Tiempo transcurrido en el tramo activo actual para cronómetro fluido segundo a segundo
+            seg_efectivos_vivo = self.segundos_efectivos
+            seg_totales_vivo = self.segundos_totales
+            if self.estado == "ACTIVO" and hasattr(self, "ultimo_chequeo_tiempo") and self.ultimo_chequeo_tiempo:
+                tramo_vivo = max(0, int(time.time() - self.ultimo_chequeo_tiempo))
+                seg_efectivos_vivo += tramo_vivo
+                seg_totales_vivo += tramo_vivo
+
             return {
                 "estado": self.estado,
                 "colaborador": CONFIG["colaborador_nombre"],
@@ -1296,8 +1304,8 @@ class CorviAsistenciaEngine:
                 "fecha": self.fecha_hoy,
                 "hora_inicio": self.hora_inicio or "--:--:--",
                 "hora_fin": self.hora_fin or "--:--:--",
-                "segundos_totales": self.segundos_totales,
-                "segundos_efectivos": self.segundos_efectivos,
+                "segundos_totales": seg_totales_vivo,
+                "segundos_efectivos": seg_efectivos_vivo,
                 "segundos_en_reunion": self.segundos_en_reunion,
                 "segundos_musica_fondo": self.segundos_musica_fondo,
                 "audio_fondo_actual": self.estado_segundo_plano_actual,
@@ -2142,6 +2150,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         .app-window {
             width: 100%;
             height: 100%;
+            max-height: 450px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -2413,7 +2422,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 const btnStop = document.getElementById('btnStop');
 
                 estadoActual = data.estado;
-                segundosLocales = data.segundos_efectivos;
+
+                // Sincronización inteligente: solo corregir si hay desvío > 1s o si el estado no es ACTIVO
+                // Esto garantiza un cronómetro 100% fluido segundo a segundo sin saltos de 10s ni congelamientos
+                if (estadoActual !== 'ACTIVO' || Math.abs(data.segundos_efectivos - segundosLocales) > 1) {
+                    segundosLocales = data.segundos_efectivos;
+                    document.getElementById('cronometro').innerText = segToHMS(segundosLocales);
+                }
 
                 if (data.estado === 'ACTIVO') {
                     badge.className = 'badge activo';
@@ -2437,7 +2452,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     btnStop.style.display = 'none';
                 }
 
-                document.getElementById('cronometro').innerText = segToHMS(data.segundos_efectivos);
                 if (data.notificaciones_activas !== undefined) {
                     actualizarBotonNotif(data.notificaciones_activas);
                 }
@@ -2528,6 +2542,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
         setInterval(actualizarEstado, 2000);
         actualizarEstado();
+
+        // Asegurar ventana compacta y elegante al cargar
+        window.addEventListener('load', function() {
+            try {
+                if (window.outerWidth > 450 || window.outerHeight > 480) {
+                    window.resizeTo(430, 440);
+                }
+            } catch(e) {}
+        });
     </script>
 </body>
 </html>
@@ -2731,13 +2754,13 @@ def iniciar_servidor_web(puerto=8765):
 
 def abrir_interfaz(puerto=8765):
     url = f"http://127.0.0.1:{puerto}"
-    window_args = [f"--app={url}", "--window-size=430,580"]
+    window_args = [f"--app={url}", "--window-size=430,440"]
     if IS_LINUX:
         def _ajustar_tamano_linux():
             for _ in range(8):
                 time.sleep(0.4)
                 try:
-                    res = subprocess.run(["wmctrl", "-r", "CORVI Control de Asistencia", "-e", "0,-1,-1,430,580"], capture_output=True)
+                    res = subprocess.run(["wmctrl", "-r", "CORVI Control de Asistencia", "-e", "0,-1,-1,430,440"], capture_output=True)
                     if res.returncode == 0:
                         break
                 except Exception:
@@ -2759,6 +2782,20 @@ def abrir_interfaz(puerto=8765):
             except Exception:
                 pass
     elif IS_WINDOWS:
+        def _ajustar_tamano_windows():
+            import ctypes
+            for _ in range(12):
+                time.sleep(0.3)
+                try:
+                    hwnd = ctypes.windll.user32.FindWindowW(None, "CORVI Control de Asistencia")
+                    if hwnd:
+                        # 0x0002 = SWP_NOMOVE, 0x0004 = SWP_NOZORDER, 0x0040 = SWP_SHOWWINDOW
+                        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 430, 440, 0x0002 | 0x0004 | 0x0040)
+                        break
+                except Exception:
+                    pass
+        threading.Thread(target=_ajustar_tamano_windows, daemon=True).start()
+
         edge_paths = [
             os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
             os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
@@ -2778,7 +2815,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.3.5"
+VERSION_LOCAL = "1.3.6"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
