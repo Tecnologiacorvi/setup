@@ -215,15 +215,18 @@
         }
 
         .action-link-btn {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
             background: linear-gradient(135deg, var(--corvi-wine) 0%, #be1258 100%);
             color: #fff;
             text-decoration: none;
-            padding: 12px 24px;
+            padding: 14px 28px;
             border-radius: 8px;
             font-weight: 700;
             font-size: 14px;
             border: 1px solid var(--gold);
+            cursor: pointer;
             transition: all 0.2s;
             box-shadow: 0 4px 15px rgba(158, 14, 71, 0.35);
         }
@@ -368,10 +371,10 @@
                     <div class="step-num">1</div>
                     <div class="step-body" style="width: 100%;">
                         <h3>Descargar el instalador ligero</h3>
-                        <p>Haz clic en el siguiente botón para descargar el archivo directo oficial:</p>
-                        <a href="https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/instalar.cmd" download="instalar.cmd" class="action-link-btn">
-                            ⬇ Descargar instalar.cmd (1 Clic)
-                        </a>
+                        <p>Haz clic en el siguiente botón para descargar directamente el archivo a tu equipo:</p>
+                        <button type="button" onclick="descargarInstalador()" class="action-link-btn" id="btnDescarga">
+                            ⬇ Descargar instalar.cmd (Descarga Directa)
+                        </button>
                     </div>
                 </div>
 
@@ -477,6 +480,39 @@ function copiar(elementId, btnElement) {
             btnElement.style.background = originalBg;
         }, 2000);
     });
+}
+
+function descargarInstalador() {
+    var btn = document.getElementById("btnDescarga");
+    btn.innerText = "Descargando...";
+    fetch("instalar.cmd")
+        .then(function(response) {
+            if (!response.ok) {
+                return fetch("https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/instalar.cmd");
+            }
+            return response;
+        })
+        .then(function(response) {
+            return response.blob();
+        })
+        .then(function(blob) {
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.style.display = "none";
+            a.href = url;
+            a.download = "instalar.cmd";
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            btn.innerText = "✔ ¡Descargado!";
+            setTimeout(function() {
+                btn.innerText = "⬇ Descargar instalar.cmd (Descarga Directa)";
+            }, 3000);
+        })
+        .catch(function(err) {
+            alert("No se pudo iniciar la descarga directa. Use la Opción 1 de Windows + R.");
+            btn.innerText = "⬇ Descargar instalar.cmd (Descarga Directa)";
+        });
 }
 </script>
 
