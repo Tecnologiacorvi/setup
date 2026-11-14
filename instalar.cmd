@@ -8,16 +8,21 @@ echo                CORVI CONSULTORES S.A.S.
 echo ============================================================
 echo.
 
-:: 1. Cerrar procesos previos de asistencia
+:: 1. Detener procesos previos y limpiar accesos viejos de pruebas anteriores
 echo [*] Preparando entorno y liberando puertos...
 taskkill /F /IM python.exe /FI "WINDOWTITLE eq *CORVI*" >nul 2>&1
 taskkill /F /IM pythonw.exe >nul 2>&1
 
-:: 2. Definir ruta de instalacion en AppData local del usuario
+:: Limpiar residuos viejos de NSIS en el Menu Inicio (evita el error de uninst.exe)
+if exist "%APPDATA%\Microsoft\Windows\Start Menu\Programs\CORVI" (
+    rmdir /s /q "%APPDATA%\Microsoft\Windows\Start Menu\Programs\CORVI" >nul 2>&1
+)
+
+:: 2. Crear directorio de instalacion en AppData local del usuario
 set "INSTALL_DIR=%LOCALAPPDATA%\CORVI_Asistencia"
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
-:: 3. Descargar archivos con curl nativo de Windows (System32)
+:: 3. Descargar componentes oficiales con curl nativo de Windows (System32)
 echo [*] Descargando componentes oficiales desde la nube CORVI...
 set "P1=ghp_TOaPDz5C"
 set "P2=PqBns7EVVYZE6ftqY5q83J3hG8RO"
@@ -29,26 +34,38 @@ curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github
 curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/Archivos_del_Sistema/icono_corvi.ico" -o "%INSTALL_DIR%\icono_corvi.ico"
 curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/version.json" -o "%INSTALL_DIR%\version.json"
 
-:: 4. Verificar o instalar dependencias de Python (Pillow)
+:: 4. Validar dependencias de Python silenciosamente
 echo [*] Verificando dependencias graficas...
 python -m pip install Pillow --quiet >nul 2>&1
 
-:: 5. Crear acceso directo en el Escritorio con el Logo Oficial de CORVI
+:: 5. Crear acceso directo en el Escritorio REAL (detecta OneDrive y carpetas en espanol)
 echo [*] Creando acceso directo en el Escritorio con logo oficial...
 set "VBS_SHORTCUT=%TEMP%\create_corvi_shortcut_%RANDOM%.vbs"
 (
 echo Set oWS = WScript.CreateObject^("WScript.Shell"^)
-echo sLinkFile = oWS.ExpandEnvironmentStrings^("%%USERPROFILE%%\Desktop\Control de Asistencia.lnk"^)
-echo Set oLink = oWS.CreateShortcut^(sLinkFile^)
+echo sDesktop = oWS.SpecialFolders^("Desktop"^)
+echo sAppDir = oWS.ExpandEnvironmentStrings^("%%LOCALAPPDATA%%\CORVI_Asistencia"^)
+echo sIco = sAppDir ^& "\icono_corvi.ico,0"
+echo Set oLink = oWS.CreateShortcut^(sDesktop ^& "\Control de Asistencia.lnk"^)
 echo oLink.TargetPath = "wscript.exe"
-echo oLink.Arguments = """" ^& oWS.ExpandEnvironmentStrings^("%%LOCALAPPDATA%%\CORVI_Asistencia\iniciar_asistencia.vbs"^) ^& """"
-echo oLink.WorkingDirectory = oWS.ExpandEnvironmentStrings^("%%LOCALAPPDATA%%\CORVI_Asistencia"^)
-echo oLink.IconLocation = oWS.ExpandEnvironmentStrings^("%%LOCALAPPDATA%%\CORVI_Asistencia\icono_corvi.ico,0"^)
+echo oLink.Arguments = """" ^& sAppDir ^& "\iniciar_asistencia.vbs" ^& """"
+echo oLink.WorkingDirectory = sAppDir
+echo oLink.IconLocation = sIco
 echo oLink.Description = "CORVI Control de Asistencia"
 echo oLink.Save
+echo Set oLink2 = oWS.CreateShortcut^(oWS.SpecialFolders^("Programs"^) ^& "\Control de Asistencia.lnk"^)
+echo oLink2.TargetPath = "wscript.exe"
+echo oLink2.Arguments = """" ^& sAppDir ^& "\iniciar_asistencia.vbs" ^& """"
+echo oLink2.WorkingDirectory = sAppDir
+echo oLink2.IconLocation = sIco
+echo oLink2.Description = "CORVI Control de Asistencia"
+echo oLink2.Save
 ) > "%VBS_SHORTCUT%"
 cscript //nologo "%VBS_SHORTCUT%" >nul 2>&1
 del /f /q "%VBS_SHORTCUT%" >nul 2>&1
+
+:: Forzar refresco visual de iconos en el explorador de Windows
+ie4uinit.exe -show >nul 2>&1
 
 :: 6. Iniciar la aplicacion de forma 100% silenciosa en segundo plano (sin consolas)
 echo [*] Iniciando panel de control de asistencia...
