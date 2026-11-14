@@ -2146,15 +2146,20 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             color: var(--text-main);
             overflow: hidden;
             user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .app-window {
             width: 100%;
+            max-width: 430px;
             height: 100%;
-            max-height: 450px;
+            max-height: 440px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             background: #ffffff;
+            margin: 0 auto;
         }
         .header {
             background: linear-gradient(135deg, var(--burgundy-deep) 0%, var(--burgundy-vivid) 100%);
@@ -2393,12 +2398,32 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     </div>
 
     <script>
+                let estadoActual = 'DETENIDO';
+        let segundosBase = 0;
+        let marcaTiempoSync = Date.now();
+
         function segToHMS(s) {
-            const h = Math.floor(s / 3600).toString().padStart(2, '0');
-            const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
-            const sec = (s % 60).toString().padStart(2, '0');
+            const secNum = Math.max(0, Math.floor(s));
+            const h = Math.floor(secNum / 3600).toString().padStart(2, '0');
+            const m = Math.floor((secNum % 3600) / 60).toString().padStart(2, '0');
+            const sec = (secNum % 60).toString().padStart(2, '0');
             return `${h}:${m}:${sec}`;
         }
+
+        // Cronómetro matemático continuo: calcula segundos exactos transcurridos en tiempo real
+        // Garantiza avance fluido segundo a segundo (43, 44, 45...) con 0.0% CPU y cero saltos de 10s
+        function refrescarCronometroVisual() {
+            let mostrar = segundosBase;
+            if (estadoActual === 'ACTIVO') {
+                const deltaSeg = Math.floor((Date.now() - marcaTiempoSync) / 1000);
+                mostrar = segundosBase + Math.max(0, deltaSeg);
+            }
+            const el = document.getElementById('cronometro');
+            if (el) el.innerText = segToHMS(mostrar);
+        }
+
+        // Ticking continuo cada 250ms para sincronización visual perfecta
+        setInterval(refrescarCronometroVisual, 250);
 
         async function actualizarEstado() {
             try {
@@ -2422,13 +2447,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 const btnStop = document.getElementById('btnStop');
 
                 estadoActual = data.estado;
-
-                // Sincronización inteligente: solo corregir si hay desvío > 1s o si el estado no es ACTIVO
-                // Esto garantiza un cronómetro 100% fluido segundo a segundo sin saltos de 10s ni congelamientos
-                if (estadoActual !== 'ACTIVO' || Math.abs(data.segundos_efectivos - segundosLocales) > 1) {
-                    segundosLocales = data.segundos_efectivos;
-                    document.getElementById('cronometro').innerText = segToHMS(segundosLocales);
-                }
+                segundosBase = data.segundos_efectivos;
+                marcaTiempoSync = Date.now();
+                refrescarCronometroVisual();
 
                 if (data.estado === 'ACTIVO') {
                     badge.className = 'badge activo';
@@ -2529,17 +2550,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             }
         }
 
-        let segundosLocales = 0;
-        let estadoActual = 'DETENIDO';
-
-        // Cronómetro fluido segundo a segundo (segundo a segundo en pantalla)
-        setInterval(function() {
-            if (estadoActual === 'ACTIVO') {
-                segundosLocales++;
-                document.getElementById('cronometro').innerText = segToHMS(segundosLocales);
-            }
-        }, 1000);
-
         setInterval(actualizarEstado, 2000);
         actualizarEstado();
 
@@ -2587,6 +2597,24 @@ class CorviHTTPHandler(BaseHTTPRequestHandler):
             self.end_headers()
             resumen = ENGINE.get_resumen_en_vivo()
             self.wfile.write(json.dumps(resumen).encode("utf-8"))
+
+        elif path == "/api/version":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            est = ENGINE.estado if 'ENGINE' in globals() and ENGINE else "DETENIDO"
+            self.wfile.write(json.dumps({"version": VERSION_LOCAL, "estado": est}).encode("utf-8"))
+
+        elif path == "/api/cerrar_servidor":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"status":"ok","message":"Cerrando instancia previa para actualizar..."}')
+            def _terminar():
+                time.sleep(0.4)
+                os._exit(0)
+            threading.Thread(target=_terminar, daemon=True).start()
 
         elif path == "/reporte":
             admin_token = params.get("auth", [""])[0]
@@ -2784,16 +2812,25 @@ def abrir_interfaz(puerto=8765):
     elif IS_WINDOWS:
         def _ajustar_tamano_windows():
             import ctypes
-            for _ in range(12):
-                time.sleep(0.3)
-                try:
-                    hwnd = ctypes.windll.user32.FindWindowW(None, "CORVI Control de Asistencia")
-                    if hwnd:
-                        # 0x0002 = SWP_NOMOVE, 0x0004 = SWP_NOZORDER, 0x0040 = SWP_SHOWWINDOW
-                        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 430, 440, 0x0002 | 0x0004 | 0x0040)
-                        break
-                except Exception:
-                    pass
+            try:
+                WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+                def enum_cb(hwnd, lparam):
+                    length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
+                    if length > 0:
+                        buff = ctypes.create_unicode_buffer(length + 1)
+                        ctypes.windll.user32.GetWindowTextW(hwnd, buff, length + 1)
+                        t = buff.value
+                        if "Control de Asistencia" in t or "CORVI" in t:
+                            # 0x0002 = SWP_NOMOVE, 0x0004 = SWP_NOZORDER, 0x0040 = SWP_SHOWWINDOW
+                            ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 430, 440, 0x0002 | 0x0004 | 0x0040)
+                            return False
+                    return True
+                cb = WNDENUMPROC(enum_cb)
+                for _ in range(15):
+                    time.sleep(0.3)
+                    ctypes.windll.user32.EnumWindows(cb, 0)
+            except Exception:
+                pass
         threading.Thread(target=_ajustar_tamano_windows, daemon=True).start()
 
         edge_paths = [
@@ -2815,7 +2852,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.3.6"
+VERSION_LOCAL = "1.3.7"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
@@ -2873,19 +2910,44 @@ if __name__ == "__main__":
     verificar_y_aplicar_actualizaciones()
     puerto = CONFIG.get("puerto_web", 8765)
 
-    # Bloqueo de Instancia Única: Si el control de asistencia ya está activo en segundo plano,
-    # no creamos un segundo proceso duplicado; simplemente abrimos la ventana visual
-    # conectada al motor activo y salimos limpiamente.
+    def parse_version_str(v):
+        return [int(x) for x in str(v).split(".") if x.isdigit()]
+
+    # Chequeo y reciclaje inteligente de instancia previa:
+    # Si detecta una versión vieja en memoria, la cierra limpiamente y levanta v1.3.7
     import urllib.request
     try:
-        req = urllib.request.Request(f"http://127.0.0.1:{puerto}/api/estado", headers={'User-Agent': 'CORVI-Launcher'})
-        with urllib.request.urlopen(req, timeout=0.8) as resp:
+        req = urllib.request.Request(f"http://127.0.0.1:{puerto}/api/version", headers={'User-Agent': 'CORVI-Launcher'})
+        with urllib.request.urlopen(req, timeout=1.0) as resp:
             if resp.status == 200:
-                print(f"[CONTROL DE ASISTENCIA] Instancia activa detectada en puerto {puerto}. Abriendo panel de control...")
-                abrir_interfaz(puerto)
-                sys.exit(0)
+                data_inst = json.loads(resp.read().decode("utf-8"))
+                v_inst = data_inst.get("version", "1.0.0")
+                if parse_version_str(v_inst) < parse_version_str(VERSION_LOCAL):
+                    print(f"[ACTUALIZADOR] Instancia anterior v{v_inst} detectada. Cerrando para arrancar v{VERSION_LOCAL}...")
+                    try:
+                        urllib.request.urlopen(f"http://127.0.0.1:{puerto}/api/cerrar_servidor", timeout=1.0)
+                    except Exception:
+                        pass
+                    time.sleep(1.2)
+                else:
+                    print(f"[CONTROL DE ASISTENCIA] Instancia v{v_inst} activa en puerto {puerto}. Abriendo panel de control...")
+                    abrir_interfaz(puerto)
+                    sys.exit(0)
     except Exception:
-        pass
+        # Si /api/version no respondió pero /api/estado sí responde, es una instancia antigua (v1.3.6 o inferior)
+        try:
+            req_old = urllib.request.Request(f"http://127.0.0.1:{puerto}/api/estado", headers={'User-Agent': 'CORVI-Launcher'})
+            with urllib.request.urlopen(req_old, timeout=0.8) as resp_old:
+                if resp_old.status == 200:
+                    if sys.platform == "win32":
+                        try:
+                            import subprocess
+                            subprocess.run(f"powershell -Command \"Get-Process pythonw | Where-Object {{ $_.Id -ne {os.getpid()} }} | Stop-Process -Force\"", shell=True, timeout=3)
+                        except Exception:
+                            pass
+                    time.sleep(1.2)
+        except Exception:
+            pass
 
     print("=" * 70)
     print("   CORVI CONTROL DE ASISTENCIA — SISTEMA DE TELEMETRÍA LABORAL")
