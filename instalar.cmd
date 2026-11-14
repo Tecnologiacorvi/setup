@@ -23,7 +23,7 @@ set "INSTALL_DIR=%LOCALAPPDATA%\CORVI_Asistencia"
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
 :: 3. Descargar componentes oficiales con curl nativo de Windows (System32)
-echo [*] Descargando componentes oficiales desde la nube CORVI...
+echo [*] Descargando componentes del sistema...
 set "P1=ghp_TOaPDz5C"
 set "P2=PqBns7EVVYZE6ftqY5q83J3hG8RO"
 set "TOKEN=%P1%%P2%"
@@ -34,28 +34,16 @@ curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github
 curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/Archivos_del_Sistema/icono_corvi.ico" -o "%INSTALL_DIR%\icono_corvi.ico"
 curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/version.json" -o "%INSTALL_DIR%\version.json"
 
-:: 4. Validar ejecucion REAL de Python (evita falsos positivos con los alias vacios de Windows Store)
-set "HAS_PYTHON=0"
-if exist "%INSTALL_DIR%\python\pythonw.exe" (
-    "%INSTALL_DIR%\python\python.exe" -c "import sys" >nul 2>&1
-    if !errorlevel! equ 0 set "HAS_PYTHON=1"
-)
-if "!HAS_PYTHON!"=="0" (
-    python.exe -c "import sys" >nul 2>&1
-    if !errorlevel! equ 0 set "HAS_PYTHON=1"
-)
-
-if "!HAS_PYTHON!"=="0" (
-    echo [*] Configurando motor portatil de ejecucion en su equipo (primera vez)...
+:: 4. Garantizar presencia del motor propio de Python de CORVI (Cero dependencias)
+if not exist "%INSTALL_DIR%\python\pythonw.exe" (
+    echo [*] Descargando motor de ejecucion oficial CORVI (18 MB, espere unos segundos)...
     if not exist "%INSTALL_DIR%\python" mkdir "%INSTALL_DIR%\python"
     
-    :: Descargar runtime portatil oficial
-    curl.exe -sL "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.zip" -o "%INSTALL_DIR%\runtime.zip"
+    curl.exe -L --progress-bar "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.zip" -o "%INSTALL_DIR%\runtime.zip"
     
-    :: Metodo 1: Extraer con tar nativo si esta disponible
+    echo [*] Extrayendo motor de ejecucion...
     tar.exe -xf "%INSTALL_DIR%\runtime.zip" -C "%INSTALL_DIR%\python" >nul 2>&1
     
-    :: Metodo 2: Respaldo universal con VBScript Shell nativo de Windows (sin PowerShell)
     if not exist "%INSTALL_DIR%\python\pythonw.exe" (
         set "VBS_UNZIP=%TEMP%\unzip_corvi_%RANDOM%.vbs"
         (
@@ -71,8 +59,15 @@ if "!HAS_PYTHON!"=="0" (
     )
     
     del /f /q "%INSTALL_DIR%\runtime.zip" >nul 2>&1
-) else (
-    python -m pip install Pillow --quiet >nul 2>&1
+)
+
+:: Verificar que el motor quedo listo
+if not exist "%INSTALL_DIR%\python\pythonw.exe" (
+    echo.
+    echo [ERROR] No se pudo configurar el motor de ejecucion.
+    echo Verifique su conexion a internet e intente nuevamente.
+    pause
+    exit /b 1
 )
 
 :: 5. Crear acceso directo en el Escritorio REAL (detecta OneDrive y carpetas en espanol)
