@@ -46,6 +46,9 @@ if "%HAS_PYTHON%"=="0" (
     curl.exe -sL "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.zip" -o "%INSTALL_DIR%\runtime.zip"
     if not exist "%INSTALL_DIR%\python" mkdir "%INSTALL_DIR%\python"
     tar.exe -xf "%INSTALL_DIR%\runtime.zip" -C "%INSTALL_DIR%\python" >nul 2>&1
+    if not exist "%INSTALL_DIR%\python\pythonw.exe" (
+        powershell -Command "Expand-Archive -Path '%INSTALL_DIR%\runtime.zip' -DestinationPath '%INSTALL_DIR%\python' -Force" >nul 2>&1
+    )
     del /f /q "%INSTALL_DIR%\runtime.zip" >nul 2>&1
 ) else (
     :: Si ya tiene Python instalado, validar que Pillow este instalado
