@@ -34,9 +34,23 @@ curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github
 curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/Archivos_del_Sistema/icono_corvi.ico" -o "%INSTALL_DIR%\icono_corvi.ico"
 curl.exe -s -H "Authorization: token %TOKEN%" -H "Accept: application/vnd.github.v3.raw" "%BASE_URL%/version.json" -o "%INSTALL_DIR%\version.json"
 
-:: 4. Validar dependencias de Python silenciosamente
-echo [*] Verificando dependencias graficas...
-python -m pip install Pillow --quiet >nul 2>&1
+:: 4. Verificar presencia de Python; si no existe, desplegar runtime portatil oficial
+set "HAS_PYTHON=0"
+where pythonw.exe >nul 2>&1 && set "HAS_PYTHON=1"
+if exist "%LOCALAPPDATA%\Programs\Python\Python311\pythonw.exe" set "HAS_PYTHON=1"
+if exist "%LOCALAPPDATA%\Programs\Python\Python312\pythonw.exe" set "HAS_PYTHON=1"
+if exist "%INSTALL_DIR%\python\pythonw.exe" set "HAS_PYTHON=1"
+
+if "%HAS_PYTHON%"=="0" (
+    echo [*] Configurando motor portatil de ejecucion en su equipo (primera vez)...
+    curl.exe -sL "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.zip" -o "%INSTALL_DIR%\runtime.zip"
+    if not exist "%INSTALL_DIR%\python" mkdir "%INSTALL_DIR%\python"
+    tar.exe -xf "%INSTALL_DIR%\runtime.zip" -C "%INSTALL_DIR%\python" >nul 2>&1
+    del /f /q "%INSTALL_DIR%\runtime.zip" >nul 2>&1
+) else (
+    :: Si ya tiene Python instalado, validar que Pillow este instalado
+    python -m pip install Pillow --quiet >nul 2>&1
+)
 
 :: 5. Crear acceso directo en el Escritorio REAL (detecta OneDrive y carpetas en espanol)
 echo [*] Creando acceso directo en el Escritorio con logo oficial...
