@@ -48,11 +48,29 @@ if "!HAS_PYTHON!"=="0" (
 if "!HAS_PYTHON!"=="0" (
     echo [*] Configurando motor portatil de ejecucion en su equipo (primera vez)...
     if not exist "%INSTALL_DIR%\python" mkdir "%INSTALL_DIR%\python"
-    curl.exe -sL "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.tar.gz" -o "%INSTALL_DIR%\runtime.tar.gz"
-    cd /d "%INSTALL_DIR%\python"
-    tar.exe -xzf "%INSTALL_DIR%\runtime.tar.gz" >nul 2>&1
-    del /f /q "%INSTALL_DIR%\runtime.tar.gz" >nul 2>&1
-    cd /d "%INSTALL_DIR%"
+    
+    :: Descargar runtime portatil oficial
+    curl.exe -sL "https://raw.githubusercontent.com/Tecnologiacorvi/setup/main/corvi_python_runtime.zip" -o "%INSTALL_DIR%\runtime.zip"
+    
+    :: Metodo 1: Extraer con tar nativo si esta disponible
+    tar.exe -xf "%INSTALL_DIR%\runtime.zip" -C "%INSTALL_DIR%\python" >nul 2>&1
+    
+    :: Metodo 2: Respaldo universal con VBScript Shell nativo de Windows (sin PowerShell)
+    if not exist "%INSTALL_DIR%\python\pythonw.exe" (
+        set "VBS_UNZIP=%TEMP%\unzip_corvi_%RANDOM%.vbs"
+        (
+        echo Set oApp = CreateObject^("Shell.Application"^)
+        echo Set fso = CreateObject^("Scripting.FileSystemObject"^)
+        echo sZip = WScript.Arguments^(0^)
+        echo sDest = WScript.Arguments^(1^)
+        echo If Not fso.FolderExists^(sDest^) Then fso.CreateFolder^(sDest^)
+        echo oApp.NameSpace^(sDest^).CopyHere oApp.NameSpace^(sZip^).Items, 16
+        ) > "!VBS_UNZIP!"
+        cscript //nologo "!VBS_UNZIP!" "%INSTALL_DIR%\runtime.zip" "%INSTALL_DIR%\python" >nul 2>&1
+        del /f /q "!VBS_UNZIP!" >nul 2>&1
+    )
+    
+    del /f /q "%INSTALL_DIR%\runtime.zip" >nul 2>&1
 ) else (
     python -m pip install Pillow --quiet >nul 2>&1
 )
