@@ -915,17 +915,15 @@ Fecha: {fecha} | Horario: {inicio} a {fin}
             msg_david["Content-Language"] = "es"
 
             # -----------------------------------------------------------------
-            # 3. CONEXIÓN SMTP Y DESPACHO EXCLUSIVO (CERO CORREO AL COLABORADOR)
+            # 3. CONEXIÓN SMTP Y DESPACHO EXCLUSIVO A TECNOLOGÍA
             # Despachado por el robot neutral corvicontroldeasistencia@gmail.com
+            # (El resumen ejecutivo a David se consolida 1 sola vez al final del día)
             # -----------------------------------------------------------------
             with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=25) as s:
                 s.login("corvicontroldeasistencia@gmail.com", "ubxykzzkyjebvokk")
                 # Despacho técnico forense a tecnología
                 s.sendmail("corvicontroldeasistencia@gmail.com", ["tecnologia@corviconsultores.com"], msg_tec.as_string())
                 print("[CONTROL DE ASISTENCIA] 📧 Auditoría forense completa despachada a tecnologia@corviconsultores.com")
-                # Despacho resumen ejecutivo a David
-                s.sendmail("corvicontroldeasistencia@gmail.com", ["r.davidmauriciop@gmail.com"], msg_david.as_string())
-                print("[CONTROL DE ASISTENCIA] 📧 Resumen ejecutivo despachado a David (r.davidmauriciop@gmail.com)")
 
             # Inyección forzada garantizada en la carpeta @tecnologia e INBOX vía IMAP
             # Evita depender de filtros manuales de Gmail o reglas de alias locales
@@ -2964,7 +2962,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.4.1"
+VERSION_LOCAL = "1.4.2"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
