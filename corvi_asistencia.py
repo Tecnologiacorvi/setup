@@ -1249,183 +1249,183 @@ class CorviAsistenciaEngine:
             self.ultimo_chequeo_tiempo = time.time()
             return
 
-            ahora_ts = time.time()
+        ahora_ts = time.time()
 
-            # Recordatorios automáticos al colaborador (solo si están habilitadas)
-            ahora_dt = datetime.datetime.now()
-            notif_habilitadas = CONFIG.get("notificaciones_activas", True)
-            
-            # 1. Recordatorio de Almuerzo (12:00 PM a 1:00 PM)
-            if notif_habilitadas and ahora_dt.hour == 12 and not self.notificado_almuerzo_hoy:
-                enviar_notificacion(
-                    "Control de Asistencia",
-                    "Hora de almuerzo. Recuerde activar 'Pausa / Almuerzo' para su tiempo de descanso."
-                )
-                self.notificado_almuerzo_hoy = True
-            
-            # 2. Recordatorio de Fin de Jornada (5:00 PM a 6:00 PM)
-            if notif_habilitadas and ahora_dt.hour == 17 and not self.notificado_fin_jornada_hoy:
-                enviar_notificacion(
-                    "Control de Asistencia",
-                    "Fin de jornada. Si ya completó su horario laboral de hoy, recuerde pulsar 'Finalizar Turno'."
-                )
-                self.notificado_fin_jornada_hoy = True
-            
-            # 3. Notificación periódica cada 60 minutos de jornada activa
-            if notif_habilitadas and (ahora_ts - self.ultima_notif_hora_ts >= 3600):
-                enviar_notificacion(
-                    "Control de Asistencia",
-                    "Jornada laboral en curso."
-                )
-                self.ultima_notif_hora_ts = ahora_ts
+        # Recordatorios automáticos al colaborador (solo si están habilitadas)
+        ahora_dt = datetime.datetime.now()
+        notif_habilitadas = CONFIG.get("notificaciones_activas", True)
+        
+        # 1. Recordatorio de Almuerzo (12:00 PM a 1:00 PM)
+        if notif_habilitadas and ahora_dt.hour == 12 and not self.notificado_almuerzo_hoy:
+            enviar_notificacion(
+                "Control de Asistencia",
+                "Hora de almuerzo. Recuerde activar 'Pausa / Almuerzo' para su tiempo de descanso."
+            )
+            self.notificado_almuerzo_hoy = True
+        
+        # 2. Recordatorio de Fin de Jornada (5:00 PM a 6:00 PM)
+        if notif_habilitadas and ahora_dt.hour == 17 and not self.notificado_fin_jornada_hoy:
+            enviar_notificacion(
+                "Control de Asistencia",
+                "Fin de jornada. Si ya completó su horario laboral de hoy, recuerde pulsar 'Finalizar Turno'."
+            )
+            self.notificado_fin_jornada_hoy = True
+        
+        # 3. Notificación periódica cada 60 minutos de jornada activa
+        if notif_habilitadas and (ahora_ts - self.ultima_notif_hora_ts >= 3600):
+            enviar_notificacion(
+                "Control de Asistencia",
+                "Jornada laboral en curso."
+            )
+            self.ultima_notif_hora_ts = ahora_ts
 
-            delta = max(0, int(ahora_ts - self.ultimo_chequeo_tiempo))
-            self.ultimo_chequeo_tiempo = ahora_ts
+        delta = max(0, int(ahora_ts - self.ultimo_chequeo_tiempo))
+        self.ultimo_chequeo_tiempo = ahora_ts
 
-            # Monitoreo de Red
-            net_online, net_latency = check_internet_status()
+        # Monitoreo de Red
+        net_online, net_latency = check_internet_status()
 
-            # Ventana y Periférico
-            app_name, title = get_active_window_info()
-            idle_sec = get_idle_seconds()
-            umbral_afk = CONFIG.get("umbral_inactividad_afk_seg", 300)
-            is_idle = idle_sec >= umbral_afk
+        # Ventana y Periférico
+        app_name, title = get_active_window_info()
+        idle_sec = get_idle_seconds()
+        umbral_afk = CONFIG.get("umbral_inactividad_afk_seg", 300)
+        is_idle = idle_sec >= umbral_afk
 
-            # Clasificación Granular con Detección de Reunión Activa (Meet / WorkAdventure con compañeros)
-            cat, plataforma, titulo_limpio, es_alerta, detalle, es_reunion_efectiva = clasificar_actividad(app_name, title, is_idle)
+        # Clasificación Granular con Detección de Reunión Activa (Meet / WorkAdventure con compañeros)
+        cat, plataforma, titulo_limpio, es_alerta, detalle, es_reunion_efectiva = clasificar_actividad(app_name, title, is_idle)
 
-            # Inspección Holística de Segundo Plano (Audio/Música, Pestañas Múltiples de todos los perfiles)
-            bg_info = inspeccionar_actividad_segundo_plano()
-            if bg_info.get("audio_segundo_plano"):
-                audio_track = bg_info["audio_segundo_plano"]
-                with self.lock:
-                    self.segundos_musica_fondo += int(delta)
-                    self.historial_musica_fondo[audio_track] = self.historial_musica_fondo.get(audio_track, 0) + int(delta)
+        # Inspección Holística de Segundo Plano (Audio/Música, Pestañas Múltiples de todos los perfiles)
+        bg_info = inspeccionar_actividad_segundo_plano()
+        if bg_info.get("audio_segundo_plano"):
+            audio_track = bg_info["audio_segundo_plano"]
+            with self.lock:
+                self.segundos_musica_fondo += int(delta)
+                self.historial_musica_fondo[audio_track] = self.historial_musica_fondo.get(audio_track, 0) + int(delta)
 
-            for p in bg_info.get("pestanas_abiertas", []):
-                k_p = f"{p['icono']} {p['titulo']}"
-                if k_p not in self.pestanas_segundo_plano_vistas:
-                    self.pestanas_segundo_plano_vistas[k_p] = p
+        for p in bg_info.get("pestanas_abiertas", []):
+            k_p = f"{p['icono']} {p['titulo']}"
+            if k_p not in self.pestanas_segundo_plano_vistas:
+                self.pestanas_segundo_plano_vistas[k_p] = p
 
-            self.estado_segundo_plano_actual = {
-                "audio": bg_info.get("audio_segundo_plano"),
+        self.estado_segundo_plano_actual = {
+            "audio": bg_info.get("audio_segundo_plano"),
+            "app_audio": bg_info.get("audio_app"),
+            "total_pestanas": len(bg_info.get("pestanas_abiertas", [])),
+            "pestanas_resumen": [p["titulo"] for p in bg_info.get("pestanas_abiertas", [])[:6]]
+        }
+
+        with self.lock:
+            self.segundos_totales += int(delta)
+            if es_reunion_efectiva:
+                # En reunión activa: es tiempo 100% productivo y efectivo (NO se computa como AFK)
+                self.segundos_efectivos += int(delta)
+                self.segundos_en_reunion += int(delta)
+            elif is_idle:
+                # Únicamente se computa AFK cuando el colaborador está SOLO y el equipo quieto
+                self.segundos_inactivos_afk += int(delta)
+            else:
+                self.segundos_efectivos += int(delta)
+
+            # Internet
+            self.estado_internet = {"online": net_online, "latencia_ms": net_latency}
+            if net_online:
+                self.segundos_con_internet += int(delta)
+                if self.corte_internet_inicio:
+                    fin_dt = datetime.datetime.now()
+                    dur_seg = int((fin_dt - self.corte_internet_inicio).total_seconds())
+                    dur_str = f"{dur_seg // 60}m {dur_seg % 60}s" if dur_seg >= 60 else f"{dur_seg}s"
+                    self.historial_cortes_internet.append({
+                        "inicio": self.corte_internet_inicio.strftime("%H:%M:%S"),
+                        "fin": fin_dt.strftime("%H:%M:%S"),
+                        "duracion_seg": dur_seg,
+                        "duracion_str": dur_str
+                    })
+                    self.alertas.append({
+                        "hora": fin_dt.strftime("%H:%M:%S"),
+                        "tipo": "Restablecimiento de Red",
+                        "detalle": f"Internet restablecido tras {dur_str} de corte."
+                    })
+                    self.corte_internet_inicio = None
+            else:
+                self.segundos_sin_internet += int(delta)
+                if not self.corte_internet_inicio:
+                    self.corte_internet_inicio = datetime.datetime.now()
+                    self.alertas.append({
+                        "hora": self.corte_internet_inicio.strftime("%H:%M:%S"),
+                        "tipo": "Caída de Internet",
+                        "detalle": "Desconexión de red detectada por el monitor."
+                    })
+
+            # Distribuciones
+            self.distribucion_apps[app_name] = self.distribucion_apps.get(app_name, 0) + int(delta)
+            self.distribucion_plataformas[plataforma] = self.distribucion_plataformas.get(plataforma, 0) + int(delta)
+            self.distribucion_categorias[cat] = self.distribucion_categorias.get(cat, 0) + int(delta)
+
+            # Distribución detallada por contexto exacto
+            # Si el título vino truncado con "..." por el navegador/sistema, intentar resolver con inventario abierto
+            if titulo_limpio.endswith("...") or titulo_limpio.endswith("…"):
+                prefijo = titulo_limpio.rstrip(".… ").strip()
+                if len(prefijo) >= 8:
+                    for p in bg_info.get("pestanas_abiertas", []):
+                        p_t = p.get("titulo", "")
+                        if p_t.startswith(prefijo) and len(p_t) > len(titulo_limpio):
+                            titulo_limpio = p_t
+                            break
+
+            clave_detalle = f"{plataforma} || {titulo_limpio} || {cat}"
+            self.distribucion_detallada[clave_detalle] = self.distribucion_detallada.get(clave_detalle, 0) + int(delta)
+
+            # Ventana en vivo
+            self.ventana_actual = {
+                "app": app_name,
+                "plataforma": plataforma,
+                "title": titulo_limpio,
+                "idle": is_idle,
+                "idle_sec": int(idle_sec),
+                "cat": cat,
+                "es_reunion": es_reunion_efectiva,
+                "audio_fondo": bg_info.get("audio_segundo_plano"),
                 "app_audio": bg_info.get("audio_app"),
-                "total_pestanas": len(bg_info.get("pestanas_abiertas", [])),
-                "pestanas_resumen": [p["titulo"] for p in bg_info.get("pestanas_abiertas", [])[:6]]
+                "total_pestanas_abiertas": len(bg_info.get("pestanas_abiertas", [])),
+                "internet": net_online,
+                "latencia": net_latency
             }
 
-            with self.lock:
-                self.segundos_totales += int(delta)
-                if es_reunion_efectiva:
-                    # En reunión activa: es tiempo 100% productivo y efectivo (NO se computa como AFK)
-                    self.segundos_efectivos += int(delta)
-                    self.segundos_en_reunion += int(delta)
-                elif is_idle:
-                    # Únicamente se computa AFK cuando el colaborador está SOLO y el equipo quieto
-                    self.segundos_inactivos_afk += int(delta)
-                else:
-                    self.segundos_efectivos += int(delta)
+            evento = {
+                "hora": datetime.datetime.now().strftime("%H:%M:%S"),
+                "app": app_name,
+                "plataforma": plataforma,
+                "title": titulo_limpio[:120],
+                "cat": cat,
+                "idle": is_idle,
+                "net": net_online
+            }
+            self.registro_ventanas.append(evento)
+            if len(self.registro_ventanas) > 500:
+                self.registro_ventanas.pop(0)
 
-                # Internet
-                self.estado_internet = {"online": net_online, "latencia_ms": net_latency}
-                if net_online:
-                    self.segundos_con_internet += int(delta)
-                    if self.corte_internet_inicio:
-                        fin_dt = datetime.datetime.now()
-                        dur_seg = int((fin_dt - self.corte_internet_inicio).total_seconds())
-                        dur_str = f"{dur_seg // 60}m {dur_seg % 60}s" if dur_seg >= 60 else f"{dur_seg}s"
-                        self.historial_cortes_internet.append({
-                            "inicio": self.corte_internet_inicio.strftime("%H:%M:%S"),
-                            "fin": fin_dt.strftime("%H:%M:%S"),
-                            "duracion_seg": dur_seg,
-                            "duracion_str": dur_str
-                        })
-                        self.alertas.append({
-                            "hora": fin_dt.strftime("%H:%M:%S"),
-                            "tipo": "Restablecimiento de Red",
-                            "detalle": f"Internet restablecido tras {dur_str} de corte."
-                        })
-                        self.corte_internet_inicio = None
-                else:
-                    self.segundos_sin_internet += int(delta)
-                    if not self.corte_internet_inicio:
-                        self.corte_internet_inicio = datetime.datetime.now()
-                        self.alertas.append({
-                            "hora": self.corte_internet_inicio.strftime("%H:%M:%S"),
-                            "tipo": "Caída de Internet",
-                            "detalle": "Desconexión de red detectada por el monitor."
-                        })
-
-                # Distribuciones
-                self.distribucion_apps[app_name] = self.distribucion_apps.get(app_name, 0) + int(delta)
-                self.distribucion_plataformas[plataforma] = self.distribucion_plataformas.get(plataforma, 0) + int(delta)
-                self.distribucion_categorias[cat] = self.distribucion_categorias.get(cat, 0) + int(delta)
-
-                # Distribución detallada por contexto exacto
-                # Si el título vino truncado con "..." por el navegador/sistema, intentar resolver con inventario abierto
-                if titulo_limpio.endswith("...") or titulo_limpio.endswith("…"):
-                    prefijo = titulo_limpio.rstrip(".… ").strip()
-                    if len(prefijo) >= 8:
-                        for p in bg_info.get("pestanas_abiertas", []):
-                            p_t = p.get("titulo", "")
-                            if p_t.startswith(prefijo) and len(p_t) > len(titulo_limpio):
-                                titulo_limpio = p_t
-                                break
-
-                clave_detalle = f"{plataforma} || {titulo_limpio} || {cat}"
-                self.distribucion_detallada[clave_detalle] = self.distribucion_detallada.get(clave_detalle, 0) + int(delta)
-
-                # Ventana en vivo
-                self.ventana_actual = {
-                    "app": app_name,
-                    "plataforma": plataforma,
-                    "title": titulo_limpio,
-                    "idle": is_idle,
-                    "idle_sec": int(idle_sec),
-                    "cat": cat,
-                    "es_reunion": es_reunion_efectiva,
-                    "audio_fondo": bg_info.get("audio_segundo_plano"),
-                    "app_audio": bg_info.get("audio_app"),
-                    "total_pestanas_abiertas": len(bg_info.get("pestanas_abiertas", [])),
-                    "internet": net_online,
-                    "latencia": net_latency
+            if es_alerta:
+                alerta_item = {
+                    "hora": evento["hora"],
+                    "tipo": cat,
+                    "detalle": detalle
                 }
+                if not self.alertas or self.alertas[-1]["detalle"] != alerta_item["detalle"]:
+                    self.alertas.append(alerta_item)
 
-                evento = {
-                    "hora": datetime.datetime.now().strftime("%H:%M:%S"),
-                    "app": app_name,
-                    "plataforma": plataforma,
-                    "title": titulo_limpio[:120],
-                    "cat": cat,
-                    "idle": is_idle,
-                    "net": net_online
-                }
-                self.registro_ventanas.append(evento)
-                if len(self.registro_ventanas) > 500:
-                    self.registro_ventanas.pop(0)
+        carpeta_dia = self.get_carpeta_dia()
+        log_path = os.path.join(carpeta_dia, "telemetria.jsonl")
+        try:
+            with open(log_path, "a", encoding="utf-8") as f_log:
+                f_log.write(json.dumps(evento, ensure_ascii=False) + "\n")
+        except Exception:
+            pass
 
-                if es_alerta:
-                    alerta_item = {
-                        "hora": evento["hora"],
-                        "tipo": cat,
-                        "detalle": detalle
-                    }
-                    if not self.alertas or self.alertas[-1]["detalle"] != alerta_item["detalle"]:
-                        self.alertas.append(alerta_item)
-
-            carpeta_dia = self.get_carpeta_dia()
-            log_path = os.path.join(carpeta_dia, "telemetria.jsonl")
-            try:
-                with open(log_path, "a", encoding="utf-8") as f_log:
-                    f_log.write(json.dumps(evento, ensure_ascii=False) + "\n")
-            except Exception:
-                pass
-
-            # Chequeo de captura periódica (cada 5 minutos)
-            intervalo_captura_seg = CONFIG.get("intervalo_captura_min", 5) * 60
-            if (ahora_ts - self.ultima_captura_tiempo) >= intervalo_captura_seg:
-                self.ultima_captura_tiempo = ahora_ts
-                self.tomar_captura(f"Periódica ({CONFIG.get('intervalo_captura_min', 5)} min)")
+        # Chequeo de captura periódica (cada 5 minutos)
+        intervalo_captura_seg = CONFIG.get("intervalo_captura_min", 5) * 60
+        if (ahora_ts - self.ultima_captura_tiempo) >= intervalo_captura_seg:
+            self.ultima_captura_tiempo = ahora_ts
+            self.tomar_captura(f"Periódica ({CONFIG.get('intervalo_captura_min', 5)} min)")
 
     def get_resumen_en_vivo(self):
         with self.lock:
@@ -3091,7 +3091,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.4.5"
+VERSION_LOCAL = "1.4.6"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():

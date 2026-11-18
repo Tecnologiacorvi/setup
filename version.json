@@ -1,6 +1,6 @@
 {
-  "version": "1.4.5",
-  "fecha": "2026-11-17",
-  "descripcion": "Centinela Horario Autónomo de Corrido (8 a 6 Equipo, 8:30 a 5 Sergio L-V y Sábados 8:30 a 1:30)",
+  "version": "1.4.6",
+  "fecha": "2026-11-18",
+  "descripcion": "Correccion de indentacion critica en bucle de telemetria y capturas periodicas",
   "min_version": "1.0.0"
 }
