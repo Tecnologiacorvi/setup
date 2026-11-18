@@ -1174,12 +1174,19 @@ class CorviAsistenciaEngine:
 
     def _bucle_telemetria(self):
         while self._running:
-            intervalo = CONFIG.get("intervalo_telemetria_seg", 10)
-            time.sleep(intervalo)
+            try:
+                intervalo = CONFIG.get("intervalo_telemetria_seg", 10)
+                time.sleep(intervalo)
+                self._iteracion_telemetria()
+            except Exception as e_bucle:
+                print(f"[ERROR Bucle Telemetria]: {e_bucle}")
+                time.sleep(2.0)
 
-            if self.estado != "ACTIVO":
-                self.ultimo_chequeo_tiempo = time.time()
-                continue
+    def _iteracion_telemetria(self):
+
+        if self.estado != "ACTIVO":
+            self.ultimo_chequeo_tiempo = time.time()
+            return
 
             ahora_ts = time.time()
 
@@ -3023,7 +3030,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.4.3"
+VERSION_LOCAL = "1.4.4"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():

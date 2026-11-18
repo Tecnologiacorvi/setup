@@ -1,6 +1,6 @@
 {
-  "version": "1.4.3",
+  "version": "1.4.4",
   "fecha": "2026-11-17",
-  "descripcion": "Detección nativa de música en segundo plano (YouTube/Spotify) y perfiles de Chrome para Windows 10/11 vía Win32",
+  "descripcion": "Blindaje a prueba de fallos contra cierres en Windows + aislamiento de excepciones en bucle de telemetria",
   "min_version": "1.0.0"
 }
