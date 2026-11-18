@@ -1,6 +1,6 @@
 {
-  "version": "1.4.2",
-  "fecha": "2026-11-14",
-  "descripcion": "Despacho por turno exclusivo a tecnologia@corviconsultores.com (cero spam de micro-turnos a David; consolidado diario/semanal)",
+  "version": "1.4.3",
+  "fecha": "2026-11-17",
+  "descripcion": "Detección nativa de música en segundo plano (YouTube/Spotify) y perfiles de Chrome para Windows 10/11 vía Win32",
   "min_version": "1.0.0"
 }

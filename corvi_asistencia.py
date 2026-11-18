@@ -488,6 +488,26 @@ def check_audio_active():
         except Exception:
             pass
 
+    elif IS_WINDOWS:
+        try:
+            import ctypes
+            titles = []
+            def _enum_win_chk(hwnd, lParam):
+                if ctypes.windll.user32.IsWindowVisible(hwnd):
+                    length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
+                    if length > 0:
+                        buff = ctypes.create_unicode_buffer(length + 1)
+                        ctypes.windll.user32.GetWindowTextW(hwnd, buff, length + 1)
+                        titles.append(buff.value.lower())
+                return True
+            ENUM_WIN_PROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+            ctypes.windll.user32.EnumWindows(ENUM_WIN_PROC(_enum_win_chk), 0)
+            for t in titles:
+                if any(k in t for k in ("youtube", "spotify", "meet.google", "teams.microsoft", "zoom", "workadventure")):
+                    return True
+        except Exception:
+            pass
+
     return False
 
 
@@ -537,12 +557,53 @@ def inspeccionar_actividad_segundo_plano():
                             break
         except Exception:
             pass
+    elif IS_WINDOWS:
+        try:
+            import ctypes
+            titles = []
+            def _enum_win_audio(hwnd, lParam):
+                if ctypes.windll.user32.IsWindowVisible(hwnd):
+                    length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
+                    if length > 0:
+                        buff = ctypes.create_unicode_buffer(length + 1)
+                        ctypes.windll.user32.GetWindowTextW(hwnd, buff, length + 1)
+                        titles.append(buff.value)
+                return True
+            ENUM_WIN_PROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+            ctypes.windll.user32.EnumWindows(ENUM_WIN_PROC(_enum_win_audio), 0)
+
+            for t in titles:
+                t_clean = t.strip()
+                t_lower = t_clean.lower()
+                if "youtube" in t_lower:
+                    track = t_clean.replace(" - Google Chrome", "").replace(" - YouTube", "").replace("YouTube - Google Chrome", "").strip()
+                    if track and track.lower() not in ("youtube", "nueva pestaña"):
+                        resultado["audio_segundo_plano"] = track
+                        resultado["audio_app"] = "🎥 YouTube"
+                        break
+                    elif not resultado["audio_segundo_plano"]:
+                        resultado["audio_segundo_plano"] = "Reproducción en YouTube"
+                        resultado["audio_app"] = "🎥 YouTube"
+                elif "spotify" in t_lower:
+                    track = t_clean.replace(" - Spotify", "").replace("Spotify Free", "").replace("Spotify Premium", "").strip()
+                    if track and track.lower() not in ("spotify",):
+                        resultado["audio_segundo_plano"] = track
+                        resultado["audio_app"] = "🎵 Spotify"
+                        break
+                    elif not resultado["audio_segundo_plano"]:
+                        resultado["audio_segundo_plano"] = "Spotify"
+                        resultado["audio_app"] = "🎵 Spotify"
+        except Exception:
+            pass
 
     # --- 2. DETECCIÓN DE PESTAÑAS ABIERTAS EN TODOS LOS PERFILES DE CHROME ---
     try:
         import glob
         import re
-        chrome_base = os.path.expanduser("~/.config/google-chrome")
+        if IS_WINDOWS:
+            chrome_base = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Google", "Chrome", "User Data")
+        else:
+            chrome_base = os.path.expanduser("~/.config/google-chrome")
         ahora_ts = time.time()
         patron = os.path.join(chrome_base, "**/Sessions/Session_*")
         archivos = glob.glob(patron, recursive=True)
@@ -2962,7 +3023,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.4.2"
+VERSION_LOCAL = "1.4.3"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
