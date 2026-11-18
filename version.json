@@ -1,6 +1,6 @@
 {
-  "version": "1.4.4",
+  "version": "1.4.5",
   "fecha": "2026-11-17",
-  "descripcion": "Blindaje a prueba de fallos contra cierres en Windows + aislamiento de excepciones en bucle de telemetria",
+  "descripcion": "Centinela Horario Autónomo de Corrido (8 a 6 Equipo, 8:30 a 5 Sergio L-V y Sábados 8:30 a 1:30)",
   "min_version": "1.0.0"
 }

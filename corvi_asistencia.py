@@ -1172,12 +1172,73 @@ class CorviAsistenciaEngine:
             print(f"[ERROR Captura]: {e}")
             return None
 
+    def _verificar_centinela_horario(self):
+        """
+        Centinela Horario Autónomo (Modo Continuo / De Corrido — CORVI CONSULTORES)
+        - Sergio Acosta: Lunes a Viernes 08:30 a 17:00 | Sábados 08:30 a 13:30 (De corrido).
+        - Resto del Equipo: Lunes a Viernes 08:00 a 18:00 (De corrido).
+        - Cero pausas intermedias automáticas. Registra la jornada continua sin fragmentaciones.
+        - Auto-cierre y despacho formal al llegar la hora de salida.
+        """
+        try:
+            ahora = datetime.datetime.now()
+            dia_semana = ahora.weekday() # 0=Lunes, ..., 4=Viernes, 5=Sábado, 6=Domingo
+            hora_actual = ahora.time()
+            fecha_hoy_str = ahora.date().isoformat()
+
+            colab_nombre = CONFIG.get("colaborador_nombre", "").lower()
+            es_sergio = "sergio" in colab_nombre
+
+            if es_sergio:
+                if dia_semana <= 4:
+                    h_inicio = datetime.time(8, 30)
+                    h_fin = datetime.time(17, 0)
+                    laboral_hoy = True
+                elif dia_semana == 5:
+                    h_inicio = datetime.time(8, 30)
+                    h_fin = datetime.time(13, 30)
+                    laboral_hoy = True
+                else:
+                    laboral_hoy = False
+            else:
+                if dia_semana <= 4:
+                    h_inicio = datetime.time(8, 0)
+                    h_fin = datetime.time(18, 0)
+                    laboral_hoy = True
+                else:
+                    laboral_hoy = False
+
+            if not laboral_hoy:
+                return
+
+            # Si ya se finalizó el turno formal de hoy, no re-iniciar automáticamente
+            if getattr(self, "fecha_cierre_centinela", None) == fecha_hoy_str:
+                return
+
+            # 1. AUTO-INICIO DE CORRIDO (Dentro del horario oficial)
+            if self.estado == "DETENIDO":
+                if h_inicio <= hora_actual < h_fin:
+                    print(f"[CENTINELA] Auto-iniciando turno continuo para {CONFIG.get('colaborador_nombre')} a las {hora_actual.strftime('%H:%M:%S')}")
+                    self.iniciar()
+                    enviar_notificacion("CORVI Asistencia", f"Jornada iniciada de corrido ({hora_actual.strftime('%H:%M')}).")
+
+            # 2. AUTO-CIERRE OFICIAL AL CULMINAR LA JORNADA
+            elif self.estado in ["ACTIVO", "PAUSADO"]:
+                if hora_actual >= h_fin:
+                    print(f"[CENTINELA] Cierre de jornada continuo alcanzado ({hora_actual.strftime('%H:%M:%S')}). Finalizando turno...")
+                    self.fecha_cierre_centinela = fecha_hoy_str
+                    self.finalizar()
+                    enviar_notificacion("CORVI Asistencia", "Jornada completada. Reporte despachado formalmente.")
+        except Exception as e_centinela:
+            print(f"[ERROR Centinela Horario]: {e_centinela}")
+
     def _bucle_telemetria(self):
         while self._running:
             try:
+                self._verificar_centinela_horario()
+                self._iteracion_telemetria()
                 intervalo = CONFIG.get("intervalo_telemetria_seg", 10)
                 time.sleep(intervalo)
-                self._iteracion_telemetria()
             except Exception as e_bucle:
                 print(f"[ERROR Bucle Telemetria]: {e_bucle}")
                 time.sleep(2.0)
@@ -3030,7 +3091,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.4.4"
+VERSION_LOCAL = "1.4.5"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
