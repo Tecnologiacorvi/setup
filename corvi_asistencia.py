@@ -3288,7 +3288,7 @@ def verificar_y_aplicar_actualizaciones():
                         return [int(x) for x in v.split(".") if x.isdigit()]
 
                     if parse_v(remota) > parse_v(VERSION_LOCAL):
-                        url_script = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/corvi_asistencia.py"
+                        url_script = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/corvi_asistencia.pyw"
                         req_script = urllib.request.Request(url_script, headers={
                             "User-Agent": "CORVI-Updater",
                             "Cache-Control": "no-cache"

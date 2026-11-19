@@ -24,7 +24,12 @@ Else
 End If
 
 On Error Resume Next
-WshShell.Run pyExe & " """ & currentDir & "\corvi_asistencia.py""", 0, False
+If fso.FileExists(currentDir & "\corvi_asistencia.pyw") Then
+    scriptPath = currentDir & "\corvi_asistencia.pyw"
+Else
+    scriptPath = currentDir & "\corvi_asistencia.py"
+End If
+WshShell.Run pyExe & " """ & scriptPath & """", 0, False
 If Err.Number <> 0 Then
     MsgBox "No se encontró el motor de ejecución en su equipo." & vbCrLf & "Por favor ejecute el instalador oficial de CORVI para configurarlo automáticamente.", 48, "CORVI Control de Asistencia"
 End If
