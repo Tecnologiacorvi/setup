@@ -3185,6 +3185,22 @@ def verificar_y_aplicar_actualizaciones():
                                 with open(ruta_tmp, "w", encoding="utf-8") as f_tmp:
                                     f_tmp.write(nuevo_codigo)
                                 shutil.move(ruta_tmp, ruta_actual)
+
+                                # Sincronizar simultaneamente .py y .pyw para evitar discrepancias
+                                base_dir, arch_nom = os.path.split(ruta_actual)
+                                raiz_nom, ext = os.path.splitext(arch_nom)
+                                otra_ext = ".pyw" if ext.lower() == ".py" else ".py"
+                                otra_ruta = os.path.join(base_dir, raiz_nom + otra_ext)
+                                try:
+                                    shutil.copy2(ruta_actual, otra_ruta)
+                                except Exception:
+                                    pass
+
+                                # Reinicio silencioso en caliente si estamos fuera de jornada activa
+                                if 'ENGINE' in globals() and ENGINE and ENGINE.estado == 'DETENIDO':
+                                    import subprocess
+                                    subprocess.Popen([sys.executable, ruta_actual], cwd=base_dir)
+                                    os._exit(0)
         except Exception:
             pass
 
