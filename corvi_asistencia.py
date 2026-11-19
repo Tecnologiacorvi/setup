@@ -2727,12 +2727,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             const h = Math.floor(secNum / 3600);
             const m = Math.floor((secNum % 3600) / 60);
             const sec = secNum % 60;
+            const hStr = h.toString().padStart(2, '0');
             const mStr = m.toString().padStart(2, '0');
             const sStr = sec.toString().padStart(2, '0');
-            if (h > 0) {
-                return h + 'h ' + mStr + 'm ' + sStr + 's';
-            }
-            return mStr + 'm ' + sStr + 's';
+            return hStr + ':' + mStr + ':' + sStr;
         }
         function segToHM(s) { return segToHMS(s); }
 
@@ -2775,7 +2773,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 const entradaEl = document.getElementById('horaEntradaTag');
                 if (entradaEl) {
                     if (data.hora_inicio && data.hora_inicio !== '--:--:--') {
-                        entradaEl.innerText = `Entrada: ${data.hora_inicio}`;
+                        if (data.estado === 'ACTIVO') {
+                            entradaEl.innerHTML = `⏰ Entrada: <strong>${data.hora_inicio}</strong> <span style="color: #10b981; font-weight: 700; margin-left: 6px;">● Registrando en segundo plano</span>`;
+                        } else if (data.estado === 'PAUSADO') {
+                            entradaEl.innerHTML = `⏰ Entrada: <strong>${data.hora_inicio}</strong> <span style="color: #f59e0b; font-weight: 700; margin-left: 6px;">⏸️ En pausa</span>`;
+                        } else {
+                            entradaEl.innerHTML = `⏰ Entrada: <strong>${data.hora_inicio}</strong> <span style="color: #64748b; font-weight: 700; margin-left: 6px;">⚪ Jornada concluida</span>`;
+                        }
                     } else {
                         entradaEl.innerText = `Entrada: Pendiente`;
                     }
