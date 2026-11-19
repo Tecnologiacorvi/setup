@@ -1,6 +1,6 @@
 {
-  "version": "1.4.7",
+  "version": "1.4.8",
   "fecha": "2026-11-18",
-  "descripcion": "Persistencia de jornada diaria acumulada, blindaje visual del cronometro y prevencion de micro-turnos en ceros",
+  "descripcion": "Cronometro en vivo segundo a segundo (00m 01s, 00m 02s...) con animacion activa de segundero",
   "min_version": "1.0.0"
 }

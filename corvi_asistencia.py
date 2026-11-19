@@ -2624,7 +2624,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 </div>
                 <div class="time-display">
                     <span>TIEMPO LABORADO</span>
-                    <strong id="cronometro">0 min</strong>
+                    <strong id="cronometro">00m 00s</strong>
                 </div>
             </div>
         </div>
@@ -2663,18 +2663,22 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         let segundosBase = 0;
         let marcaTiempoSync = Date.now();
 
-        function segToHM(s) {
+        function segToHMS(s) {
             const secNum = Math.max(0, Math.floor(s));
             const h = Math.floor(secNum / 3600);
             const m = Math.floor((secNum % 3600) / 60);
+            const sec = secNum % 60;
+            const mStr = m.toString().padStart(2, '0');
+            const sStr = sec.toString().padStart(2, '0');
             if (h > 0) {
-                return `${h}h ${m.toString().padStart(2, '0')}m`;
+                return h + 'h ' + mStr + 'm ' + sStr + 's';
             }
-            return `${m} min`;
+            return mStr + 'm ' + sStr + 's';
         }
+        function segToHM(s) { return segToHMS(s); }
 
-        // Reloj clásico animado + tiempo en minutos/horas
-        // Cero números de segundos digitales: elimina al 100% cualquier salto o discordia visual
+        // Cronómetro en vivo segundo a segundo garantizado:
+        // El colaborador ve los segundos y minutos corriendo en tiempo real sin congelarse jamas
         function refrescarCronometroVisual() {
             let mostrar = segundosBase;
             if (estadoActual === 'ACTIVO') {
@@ -2682,7 +2686,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 mostrar = segundosBase + Math.max(0, deltaSeg);
             }
             const el = document.getElementById('cronometro');
-            if (el) el.innerText = segToHM(mostrar);
+            if (el) el.innerText = segToHMS(mostrar);
         }
 
         // Actualización visual periódica
@@ -3146,7 +3150,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.4.7"
+VERSION_LOCAL = "1.4.8"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
