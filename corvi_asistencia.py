@@ -1007,6 +1007,42 @@ Fecha: {fecha} | Horario: {inicio} a {fin}
     HILO_ENVIO_CORREO = t
     return t
 
+def notificar_inicio_jornada_email(colaborador, cargo, hora_entrada, fecha):
+    """
+    Despacha una alerta ultraligera a tecnologia@corviconsultores.com al arrancar la jornada matutina.
+    Permite a la direccion (David y Linda) saber exactamente quien ya inicio labores desde su Gmail.
+    """
+    def _enviar():
+        try:
+            import smtplib
+            from email.mime.text import MIMEText
+            asunto = f"🟢 [ENTRADA {hora_entrada[:5]}] Inicio de Jornada: {colaborador} ({cargo}) — {fecha}"
+            cuerpo = f"""NOTIFICACIÓN DE INICIO DE JORNADA LABORAL
+Firma: CORVI CONSULTORES S.A.S.
+Fecha: {fecha}
+
+• Colaborador: {colaborador}
+• Cargo: {cargo}
+• Hora de Entrada Registrada: {hora_entrada}
+• Versión del Sistema: {VERSION_LOCAL} (Centinela 7:00 AM Activo)
+• Estado: EN JORNADA ACTIVA (Telemetría y cronómetro en vivo)
+
+El colaborador ya se encuentra en jornada laboral activa. El reporte consolidado con capturas de pantalla y métricas de eficiencia se compilará y despachará al cierre de su jornada.
+"""
+            msg = MIMEText(cuerpo, "plain", "utf-8")
+            msg["From"] = "CORVI Control de Asistencia <corvicontroldeasistencia@gmail.com>"
+            msg["To"] = "tecnologia@corviconsultores.com"
+            msg["Subject"] = asunto
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=12) as s:
+                s.login("corvicontroldeasistencia@gmail.com", "ubxykzzkyjebvokk")
+                s.sendmail("corvicontroldeasistencia@gmail.com", ["tecnologia@corviconsultores.com"], msg.as_string())
+            print(f"[CONTROL DE ASISTENCIA] 📧 Entrada notificada a tecnologia: {asunto}")
+        except Exception as e_ent:
+            print(f"[ERROR Notif Entrada]: {e_ent}")
+
+    threading.Thread(target=_enviar, daemon=True).start()
+
 class CorviAsistenciaEngine:
     def __init__(self):
         self.lock = threading.Lock()
@@ -1149,6 +1185,13 @@ class CorviAsistenciaEngine:
 
         enviar_notificacion("Control de Asistencia", "Control de asistencia activado.")
         threading.Thread(target=self.tomar_captura, args=("Inicio de Jornada",), daemon=True).start()
+
+        # Despachar aviso formal de entrada a tecnologia (1 sola vez por dia)
+        if not getattr(self, "notificado_entrada_hoy", False) or getattr(self, "fecha_notif_entrada", None) != self.fecha_hoy:
+            self.notificado_entrada_hoy = True
+            self.fecha_notif_entrada = self.fecha_hoy
+            notificar_inicio_jornada_email(CONFIG.get("colaborador_nombre", "Colaborador"), CONFIG.get("colaborador_cargo", "Cargo"), self.hora_inicio, self.fecha_hoy)
+
         return {"status": "ok", "message": "Jornada iniciada con éxito."}
 
     def pausar(self):
@@ -3150,7 +3193,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.4.9"
+VERSION_LOCAL = "1.5.0"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
