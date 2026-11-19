@@ -2470,9 +2470,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             align-items: center;
             gap: 6px;
         }
-        .badge.detenido { background: #e2e8f0; color: #475569; }
-        .badge.activo { background: #dcfce7; color: #166534; animation: pulse 2s infinite; }
-        .badge.pausado { background: #fef3c7; color: #92400e; }
+        .badge.detenido { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+        .badge.activo { background: #dcfce7; color: #166534; border: 1px solid #4ade80; animation: pulse 2s infinite; }
+        .badge.pausado { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
         .clock-widget {
@@ -2668,23 +2668,26 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             </div>
         </div>
 
-        <div class="status-bar">
-            <div>
-                <span id="badgeEstado" class="badge detenido">⚪ DETENIDO</span>
-                <div id="horaEntradaTag" style="font-size: 11px; color: #64748b; margin-top: 5px; font-weight: 600;">Entrada: --:--:--</div>
-            </div>
-            
-            <div class="clock-widget">
-                <div class="classic-clock" id="relojClasico" title="Reloj de Jornada CORVI">
+        <div class="status-bar" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div class="classic-clock" id="relojClasico" title="Reloj de Jornada CORVI" style="width: 44px; height: 44px; flex-shrink: 0;">
                     <div class="clock-pin"></div>
                     <div class="clock-hour"></div>
                     <div class="clock-minute"></div>
-                    <div class="clock-second" id="segunderoAgujas"></div>
+                    <div class="clock-second activo" id="segunderoAgujas"></div>
                 </div>
-                <div class="time-display">
-                    <span>TIEMPO LABORADO</span>
-                    <strong id="cronometro">00m 00s</strong>
+                <div>
+                    <span id="badgeEstado" class="badge activo" style="font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 16px;">🟢 ACTIVO</span>
+                    <div id="horaEntradaTag" style="font-size: 11px; color: #475569; margin-top: 4px; font-weight: 600;">Entrada: --:--:--</div>
                 </div>
+            </div>
+            
+            <div id="panelAuditoriaFondo" style="text-align: right;">
+                <div style="font-size: 11px; font-weight: 700; color: #059669; display: flex; align-items: center; gap: 5px; justify-content: flex-end;">
+                    <span style="display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
+                    SUPERVISIÓN ACTIVA
+                </div>
+                <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Telemetría y capturas en segundo plano</div>
             </div>
         </div>
 
@@ -2718,36 +2721,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     </div>
 
     <script>
-                let estadoActual = 'DETENIDO';
-        let segundosBase = 0;
-        let marcaTiempoSync = Date.now();
-
-        function segToHMS(s) {
-            const secNum = Math.max(0, Math.floor(s));
-            const h = Math.floor(secNum / 3600);
-            const m = Math.floor((secNum % 3600) / 60);
-            const sec = secNum % 60;
-            const hStr = h.toString().padStart(2, '0');
-            const mStr = m.toString().padStart(2, '0');
-            const sStr = sec.toString().padStart(2, '0');
-            return hStr + ':' + mStr + ':' + sStr;
-        }
-        function segToHM(s) { return segToHMS(s); }
-
-        // Cronómetro en vivo segundo a segundo garantizado:
-        // El colaborador ve los segundos y minutos corriendo en tiempo real sin congelarse jamas
-        function refrescarCronometroVisual() {
-            let mostrar = segundosBase;
-            if (estadoActual === 'ACTIVO') {
-                const deltaSeg = Math.floor((Date.now() - marcaTiempoSync) / 1000);
-                mostrar = segundosBase + Math.max(0, deltaSeg);
-            }
-            const el = document.getElementById('cronometro');
-            if (el) el.innerText = segToHMS(mostrar);
-        }
-
-        // Actualización visual periódica
-        setInterval(refrescarCronometroVisual, 1000);
+        let estadoActual = 'DETENIDO';
 
         async function actualizarEstado() {
             try {
@@ -2769,70 +2743,75 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 const btnStart = document.getElementById('btnStart');
                 const btnPause = document.getElementById('btnPause');
                 const btnStop = document.getElementById('btnStop');
-
                 const entradaEl = document.getElementById('horaEntradaTag');
-                if (entradaEl) {
-                    if (data.hora_inicio && data.hora_inicio !== '--:--:--') {
-                        if (data.estado === 'ACTIVO') {
-                            entradaEl.innerHTML = `⏰ Entrada: <strong>${data.hora_inicio}</strong> <span style="color: #10b981; font-weight: 700; margin-left: 6px;">● Registrando en segundo plano</span>`;
-                        } else if (data.estado === 'PAUSADO') {
-                            entradaEl.innerHTML = `⏰ Entrada: <strong>${data.hora_inicio}</strong> <span style="color: #f59e0b; font-weight: 700; margin-left: 6px;">⏸️ En pausa</span>`;
-                        } else {
-                            entradaEl.innerHTML = `⏰ Entrada: <strong>${data.hora_inicio}</strong> <span style="color: #64748b; font-weight: 700; margin-left: 6px;">⚪ Jornada concluida</span>`;
-                        }
-                    } else {
-                        entradaEl.innerText = `Entrada: Pendiente`;
-                    }
-                }
+                const segundero = document.getElementById('segunderoAgujas');
+                const panelAuditoria = document.getElementById('panelAuditoriaFondo');
 
                 estadoActual = data.estado;
-                segundosBase = data.segundos_efectivos;
-                marcaTiempoSync = Date.now();
-                refrescarCronometroVisual();
 
-                const segundero = document.getElementById('segunderoAgujas');
+                if (entradaEl) {
+                    if (data.hora_inicio && data.hora_inicio !== '--:--:--') {
+                        entradaEl.innerHTML = `⏰ Entrada: <strong>${data.hora_inicio}</strong>`;
+                    } else {
+                        entradaEl.innerText = `⏰ Entrada: Pendiente`;
+                    }
+                }
 
                 if (data.estado === 'ACTIVO') {
                     if (segundero) segundero.className = 'clock-second activo';
                     badge.className = 'badge activo';
-                    badge.innerHTML = '🟢 EN JORNADA ACTIVA';
+                    badge.innerHTML = '🟢 ACTIVO (EN JORNADA)';
                     btnStart.style.display = 'none';
                     btnPause.style.display = 'flex';
                     btnStop.style.display = 'flex';
+                    if (panelAuditoria) {
+                        panelAuditoria.innerHTML = `
+                            <div style="font-size: 11px; font-weight: 700; color: #059669; display: flex; align-items: center; gap: 5px; justify-content: flex-end;">
+                                <span style="display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
+                                SUPERVISIÓN ACTIVA
+                            </div>
+                            <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Telemetría y capturas en segundo plano</div>
+                        `;
+                    }
                 } else if (data.estado === 'PAUSADO') {
                     if (segundero) segundero.className = 'clock-second';
                     badge.className = 'badge pausado';
-                    badge.innerHTML = '🟡 EN PAUSA / TIEMPO PERSONAL';
+                    badge.innerHTML = '🟡 EN PAUSA / ALMUERZO';
                     btnStart.style.display = 'flex';
                     btnStart.innerHTML = '▶ REANUDAR JORNADA';
                     btnPause.style.display = 'none';
                     btnStop.style.display = 'flex';
+                    if (panelAuditoria) {
+                        panelAuditoria.innerHTML = `
+                            <div style="font-size: 11px; font-weight: 700; color: #d97706; display: flex; align-items: center; gap: 5px; justify-content: flex-end;">
+                                <span style="display: inline-block; width: 8px; height: 8px; background: #f59e0b; border-radius: 50%;"></span>
+                                JORNADA EN PAUSA
+                            </div>
+                            <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Tiempo de almuerzo o personal</div>
+                        `;
+                    }
                 } else {
                     if (segundero) segundero.className = 'clock-second';
                     badge.className = 'badge detenido';
-                    if (data.segundos_efectivos > 0) {
-                        badge.innerHTML = '⚪ JORNADA FINALIZADA';
-                        btnStart.style.display = 'flex';
-                        btnStart.innerHTML = '▶ CONTINUAR JORNADA (HORAS EXTRA)';
-                        btnPause.style.display = 'none';
-                        btnStop.style.display = 'none';
-                        let banner = document.getElementById('bannerFinalizado');
-                        if (!banner) {
-                            banner = document.createElement('div');
-                            banner.id = 'bannerFinalizado';
-                            banner.style.cssText = 'grid-column: span 2; padding: 14px; background: #ecfdf5; border: 1.5px solid #10b981; border-radius: 12px; color: #065f46; font-size: 13px; font-weight: 600; text-align: center; line-height: 1.5; margin-bottom: 12px;';
-                            const grid = document.querySelector('.controls-grid');
-                            grid.parentNode.insertBefore(banner, grid);
-                        }
-                        banner.innerHTML = ;
-                    } else {
-                        badge.innerHTML = '⚪ JORNADA DETENIDA';
-                        btnStart.style.display = 'flex';
-                        btnStart.innerHTML = '▶ INICIAR JORNADA';
-                        btnPause.style.display = 'none';
-                        btnStop.style.display = 'none';
+                    badge.innerHTML = '🔴 INACTIVO (FINALIZADO)';
+                    btnStart.style.display = 'flex';
+                    btnStart.innerHTML = '▶ INICIAR JORNADA';
+                    btnPause.style.display = 'none';
+                    btnStop.style.display = 'none';
+                    if (panelAuditoria) {
+                        panelAuditoria.innerHTML = `
+                            <div style="font-size: 11px; font-weight: 700; color: #dc2626; display: flex; align-items: center; gap: 5px; justify-content: flex-end;">
+                                <span style="display: inline-block; width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></span>
+                                TURNO FINALIZADO
+                            </div>
+                            <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Reporte despachado formalmente</div>
+                        `;
                     }
                 }
+            } catch (err) {
+                console.warn('Error sincronizando estado:', err);
+            }
+        }
 
                 if (data.notificaciones_activas !== undefined) {
                     actualizarBotonNotif(data.notificaciones_activas);
@@ -3213,7 +3192,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.5.1"
+VERSION_LOCAL = "1.5.2"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():

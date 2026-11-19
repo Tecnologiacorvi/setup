@@ -1,6 +1,6 @@
 {
-  "version": "1.5.1",
+  "version": "1.5.2",
   "fecha": "2026-11-19",
-  "descripcion": "Radar de Entradas con copia a David e inyección IMAP y auto-updater inmune a candados Win32",
+  "descripcion": "UI Semáforo de Certeza inmune a fallos sin números de estrés y telemetría interna completa",
   "min_version": "1.0.0"
 }
