@@ -1061,8 +1061,38 @@ class CorviAsistenciaEngine:
         }
 
         self._running = True
+        self._restaurar_estado_del_dia()
         self.worker_thread = threading.Thread(target=self._bucle_telemetria, daemon=True)
         self.worker_thread.start()
+
+    def _restaurar_estado_del_dia(self):
+        try:
+            hoy = datetime.date.today().isoformat()
+            json_path = os.path.join(REGISTROS_DIR, hoy, "REPORTE_JORNADA.json")
+            if os.path.exists(json_path):
+                with open(json_path, "r", encoding="utf-8") as f_j:
+                    data = json.load(f_j)
+                res = data.get("resumen", {})
+                if res.get("fecha") == hoy and int(res.get("segundos_totales", 0)) > 0:
+                    self.hora_inicio = res.get("hora_inicio")
+                    self.hora_fin = res.get("hora_fin")
+                    self.segundos_totales = int(res.get("segundos_totales", 0))
+                    self.segundos_efectivos = int(res.get("segundos_efectivos", 0))
+                    self.segundos_inactivos_afk = int(res.get("segundos_inactivos", 0))
+                    self.segundos_en_reunion = int(res.get("segundos_en_reunion", 0))
+                    self.segundos_musica_fondo = int(res.get("segundos_musica_fondo", 0))
+                    self.segundos_pausa = int(res.get("segundos_pausa", 0))
+                    self.segundos_con_internet = int(res.get("segundos_con_internet", 0))
+                    self.segundos_sin_internet = int(res.get("segundos_sin_internet", 0))
+                    self.distribucion_apps = data.get("distribucion_apps", {})
+                    self.distribucion_plataformas = data.get("distribucion_plataformas", {})
+                    self.distribucion_detallada = data.get("distribucion_detallada", {})
+                    self.distribucion_categorias = data.get("distribucion_categorias", {})
+                    self.alertas = data.get("alertas", [])
+                    self.lista_capturas = data.get("capturas", [])
+                    print(f"[RESTAURACIÓN] Estado previo de hoy {hoy} restaurado: {self.segundos_efectivos}s trabajados.")
+        except Exception as e_res:
+            print(f"[ERROR Restauración Estado]: {e_res}")
 
     def get_carpeta_dia(self):
         hoy = datetime.date.today().isoformat()
@@ -1077,28 +1107,36 @@ class CorviAsistenciaEngine:
                 return {"status": "ok", "message": "Ya se encuentra en jornada activa."}
             
             ahora = datetime.datetime.now()
+            hoy = datetime.date.today().isoformat()
             if self.estado == "DETENIDO":
-                self.hora_inicio = ahora.strftime("%H:%M:%S")
-                self.fecha_hoy = datetime.date.today().isoformat()
-                self.segundos_totales = 0
-                self.segundos_efectivos = 0
-                self.segundos_inactivos_afk = 0
-                self.segundos_en_reunion = 0
-                self.segundos_musica_fondo = 0
-                self.segundos_pausa = 0
-                self.historial_musica_fondo = {}
-                self.pestanas_segundo_plano_vistas = {}
-                self.estado_segundo_plano_actual = {"audio": None, "app_audio": None, "total_pestanas": 0}
-                self.segundos_con_internet = 0
-                self.segundos_sin_internet = 0
-                self.corte_internet_inicio = None
-                self.historial_cortes_internet = []
-                self.distribucion_apps = {}
-                self.distribucion_plataformas = {}
-                self.distribucion_detallada = {}
-                self.distribucion_categorias = {}
-                self.registro_ventanas = []
-                self.alertas = []
+                if getattr(self, "fecha_hoy", None) != hoy:
+                    # Nuevo dia calendario: reinicio limpio
+                    self.fecha_hoy = hoy
+                    self.hora_inicio = ahora.strftime("%H:%M:%S")
+                    self.segundos_totales = 0
+                    self.segundos_efectivos = 0
+                    self.segundos_inactivos_afk = 0
+                    self.segundos_en_reunion = 0
+                    self.segundos_musica_fondo = 0
+                    self.segundos_pausa = 0
+                    self.historial_musica_fondo = {}
+                    self.pestanas_segundo_plano_vistas = {}
+                    self.estado_segundo_plano_actual = {"audio": None, "app_audio": None, "total_pestanas": 0}
+                    self.segundos_con_internet = 0
+                    self.segundos_sin_internet = 0
+                    self.corte_internet_inicio = None
+                    self.historial_cortes_internet = []
+                    self.distribucion_apps = {}
+                    self.distribucion_plataformas = {}
+                    self.distribucion_detallada = {}
+                    self.distribucion_categorias = {}
+                    self.registro_ventanas = []
+                    self.alertas = []
+                    self.lista_capturas = []
+                else:
+                    # Mismo dia calendario: CONSERVAR horas trabajadas acumuladas
+                    if not self.hora_inicio or self.hora_inicio == "--:--:--":
+                        self.hora_inicio = ahora.strftime("%H:%M:%S")
             elif self.estado == "PAUSADO":
                 if self.hora_pausa:
                     duracion_pausa = (ahora - datetime.datetime.strptime(f"{self.fecha_hoy} {self.hora_pausa}", "%Y-%m-%d %H:%M:%S")).total_seconds()
@@ -2705,11 +2743,28 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 } else {
                     if (segundero) segundero.className = 'clock-second';
                     badge.className = 'badge detenido';
-                    badge.innerHTML = '⚪ JORNADA DETENIDA';
-                    btnStart.style.display = 'flex';
-                    btnStart.innerHTML = '▶ INICIAR JORNADA';
-                    btnPause.style.display = 'none';
-                    btnStop.style.display = 'none';
+                    if (data.segundos_efectivos > 0) {
+                        badge.innerHTML = '⚪ JORNADA FINALIZADA';
+                        btnStart.style.display = 'flex';
+                        btnStart.innerHTML = '▶ CONTINUAR JORNADA (HORAS EXTRA)';
+                        btnPause.style.display = 'none';
+                        btnStop.style.display = 'none';
+                        let banner = document.getElementById('bannerFinalizado');
+                        if (!banner) {
+                            banner = document.createElement('div');
+                            banner.id = 'bannerFinalizado';
+                            banner.style.cssText = 'grid-column: span 2; padding: 14px; background: #ecfdf5; border: 1.5px solid #10b981; border-radius: 12px; color: #065f46; font-size: 13px; font-weight: 600; text-align: center; line-height: 1.5; margin-bottom: 12px;';
+                            const grid = document.querySelector('.controls-grid');
+                            grid.parentNode.insertBefore(banner, grid);
+                        }
+                        banner.innerHTML = ;
+                    } else {
+                        badge.innerHTML = '⚪ JORNADA DETENIDA';
+                        btnStart.style.display = 'flex';
+                        btnStart.innerHTML = '▶ INICIAR JORNADA';
+                        btnPause.style.display = 'none';
+                        btnStop.style.display = 'none';
+                    }
                 }
 
                 if (data.notificaciones_activas !== undefined) {
@@ -3091,7 +3146,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.4.6"
+VERSION_LOCAL = "1.4.7"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():

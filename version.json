@@ -1,6 +1,6 @@
 {
-  "version": "1.4.6",
+  "version": "1.4.7",
   "fecha": "2026-11-18",
-  "descripcion": "Correccion de indentacion critica en bucle de telemetria y capturas periodicas",
+  "descripcion": "Persistencia de jornada diaria acumulada, blindaje visual del cronometro y prevencion de micro-turnos en ceros",
   "min_version": "1.0.0"
 }
