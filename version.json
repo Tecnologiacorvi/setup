@@ -1,6 +1,6 @@
 {
-  "version": "1.5.2",
+  "version": "1.5.3",
   "fecha": "2026-11-19",
-  "descripcion": "UI Semáforo de Certeza inmune a fallos sin números de estrés y telemetría interna completa",
+  "descripcion": "Bombillos fisicos LED Verde y Rojo con respuesta instantanea al clic (0 ms) y telemetria forense interna intacta",
   "min_version": "1.0.0"
 }

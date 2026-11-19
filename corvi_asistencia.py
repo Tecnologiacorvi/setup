@@ -2566,6 +2566,62 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             line-height: 1.1;
         }
 
+        /* Indicador de Bombillos Físicos LED de Estado */
+        .panel-bombillos {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            background: #0f172a;
+            padding: 7px 14px;
+            border-radius: 20px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #334155;
+        }
+        .bombillo-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .bombillo {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            transition: all 0.15s ease-in-out;
+        }
+        .bombillo-verde {
+            background: #14532d;
+            border: 2px solid #166534;
+            opacity: 0.35;
+            box-shadow: none;
+        }
+        .bombillo-verde.encendido {
+            background: radial-gradient(circle, #86efac 0%, #22c55e 60%, #15803d 100%);
+            border: 2px solid #bbf7d0;
+            opacity: 1;
+            box-shadow: 0 0 14px #22c55e, 0 0 4px #86efac;
+        }
+        .bombillo-rojo {
+            background: #7f1d1d;
+            border: 2px solid #991b1b;
+            opacity: 0.35;
+            box-shadow: none;
+        }
+        .bombillo-rojo.encendido {
+            background: radial-gradient(circle, #fca5a5 0%, #ef4444 60%, #b91c1c 100%);
+            border: 2px solid #fecaca;
+            opacity: 1;
+            box-shadow: 0 0 14px #ef4444, 0 0 4px #fca5a5;
+        }
+        .bombillo-label {
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+        }
+        .bombillo-item.activo .bombillo-label {
+            color: #ffffff;
+        }
+
         .main-body {
             padding: 16px 20px;
             flex: 1;
@@ -2668,26 +2724,30 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             </div>
         </div>
 
-        <div class="status-bar" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-            <div style="display: flex; align-items: center; gap: 14px;">
-                <div class="classic-clock" id="relojClasico" title="Reloj de Jornada CORVI" style="width: 44px; height: 44px; flex-shrink: 0;">
+        <div class="status-bar" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="classic-clock" id="relojClasico" title="Reloj de Jornada CORVI" style="width: 40px; height: 40px; flex-shrink: 0;">
                     <div class="clock-pin"></div>
                     <div class="clock-hour"></div>
                     <div class="clock-minute"></div>
                     <div class="clock-second activo" id="segunderoAgujas"></div>
                 </div>
                 <div>
-                    <span id="badgeEstado" class="badge activo" style="font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 16px;">🟢 ACTIVO</span>
-                    <div id="horaEntradaTag" style="font-size: 11px; color: #475569; margin-top: 4px; font-weight: 600;">Entrada: --:--:--</div>
+                    <span id="badgeEstado" class="badge activo" style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 16px;">🟢 ACTIVO</span>
+                    <div id="horaEntradaTag" style="font-size: 11px; color: #475569; margin-top: 3px; font-weight: 600;">Entrada: --:--:--</div>
                 </div>
             </div>
             
-            <div id="panelAuditoriaFondo" style="text-align: right;">
-                <div style="font-size: 11px; font-weight: 700; color: #059669; display: flex; align-items: center; gap: 5px; justify-content: flex-end;">
-                    <span style="display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
-                    SUPERVISIÓN ACTIVA
+            <!-- Panel de Bombillos Físicos LED de Estado (Instantáneos al Clic) -->
+            <div class="panel-bombillos" title="Indicador visual instantáneo de estado">
+                <div class="bombillo-item" id="itemBombilloVerde">
+                    <div id="bombilloVerde" class="bombillo bombillo-verde encendido"></div>
+                    <span class="bombillo-label">ACTIVO</span>
                 </div>
-                <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Telemetría y capturas en segundo plano</div>
+                <div class="bombillo-item" id="itemBombilloRojo">
+                    <div id="bombilloRojo" class="bombillo bombillo-rojo"></div>
+                    <span class="bombillo-label">DETENIDO</span>
+                </div>
             </div>
         </div>
 
@@ -2723,6 +2783,65 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <script>
         let estadoActual = 'DETENIDO';
 
+        function setBombillos(estado) {
+            const bVerde = document.getElementById('bombilloVerde');
+            const bRojo = document.getElementById('bombilloRojo');
+            const itemVerde = document.getElementById('itemBombilloVerde');
+            const itemRojo = document.getElementById('itemBombilloRojo');
+            const badge = document.getElementById('badgeEstado');
+            const segundero = document.getElementById('segunderoAgujas');
+            const btnStart = document.getElementById('btnStart');
+            const btnPause = document.getElementById('btnPause');
+            const btnStop = document.getElementById('btnStop');
+
+            if (estado === 'ACTIVO') {
+                if (bVerde) bVerde.className = 'bombillo bombillo-verde encendido';
+                if (bRojo) bRojo.className = 'bombillo bombillo-rojo';
+                if (itemVerde) itemVerde.className = 'bombillo-item activo';
+                if (itemRojo) itemRojo.className = 'bombillo-item';
+                if (badge) {
+                    badge.className = 'badge activo';
+                    badge.innerHTML = '🟢 ACTIVO';
+                }
+                if (segundero) segundero.className = 'clock-second activo';
+                if (btnStart) btnStart.style.display = 'none';
+                if (btnPause) btnPause.style.display = 'flex';
+                if (btnStop) btnStop.style.display = 'flex';
+            } else if (estado === 'PAUSADO') {
+                if (bVerde) bVerde.className = 'bombillo bombillo-verde';
+                if (bRojo) bRojo.className = 'bombillo bombillo-rojo';
+                if (itemVerde) itemVerde.className = 'bombillo-item';
+                if (itemRojo) itemRojo.className = 'bombillo-item';
+                if (badge) {
+                    badge.className = 'badge pausado';
+                    badge.innerHTML = '🟡 EN PAUSA';
+                }
+                if (segundero) segundero.className = 'clock-second';
+                if (btnStart) {
+                    btnStart.style.display = 'flex';
+                    btnStart.innerHTML = '▶ REANUDAR JORNADA';
+                }
+                if (btnPause) btnPause.style.display = 'none';
+                if (btnStop) btnStop.style.display = 'flex';
+            } else {
+                if (bVerde) bVerde.className = 'bombillo bombillo-verde';
+                if (bRojo) bRojo.className = 'bombillo bombillo-rojo encendido';
+                if (itemVerde) itemVerde.className = 'bombillo-item';
+                if (itemRojo) itemRojo.className = 'bombillo-item activo';
+                if (badge) {
+                    badge.className = 'badge detenido';
+                    badge.innerHTML = '🔴 DETENIDO';
+                }
+                if (segundero) segundero.className = 'clock-second';
+                if (btnStart) {
+                    btnStart.style.display = 'flex';
+                    btnStart.innerHTML = '▶ INICIAR JORNADA';
+                }
+                if (btnPause) btnPause.style.display = 'none';
+                if (btnStop) btnStop.style.display = 'none';
+            }
+        }
+
         async function actualizarEstado() {
             try {
                 const res = await fetch('/api/estado');
@@ -2739,14 +2858,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     netTag.innerHTML = `❌ SIN CONEXIÓN A INTERNET`;
                 }
 
-                const badge = document.getElementById('badgeEstado');
-                const btnStart = document.getElementById('btnStart');
-                const btnPause = document.getElementById('btnPause');
-                const btnStop = document.getElementById('btnStop');
                 const entradaEl = document.getElementById('horaEntradaTag');
-                const segundero = document.getElementById('segunderoAgujas');
-                const panelAuditoria = document.getElementById('panelAuditoriaFondo');
-
                 estadoActual = data.estado;
 
                 if (entradaEl) {
@@ -2757,67 +2869,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     }
                 }
 
-                if (data.estado === 'ACTIVO') {
-                    if (segundero) segundero.className = 'clock-second activo';
-                    badge.className = 'badge activo';
-                    badge.innerHTML = '🟢 ACTIVO (EN JORNADA)';
-                    btnStart.style.display = 'none';
-                    btnPause.style.display = 'flex';
-                    btnStop.style.display = 'flex';
-                    if (panelAuditoria) {
-                        panelAuditoria.innerHTML = `
-                            <div style="font-size: 11px; font-weight: 700; color: #059669; display: flex; align-items: center; gap: 5px; justify-content: flex-end;">
-                                <span style="display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
-                                SUPERVISIÓN ACTIVA
-                            </div>
-                            <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Telemetría y capturas en segundo plano</div>
-                        `;
-                    }
-                } else if (data.estado === 'PAUSADO') {
-                    if (segundero) segundero.className = 'clock-second';
-                    badge.className = 'badge pausado';
-                    badge.innerHTML = '🟡 EN PAUSA / ALMUERZO';
-                    btnStart.style.display = 'flex';
-                    btnStart.innerHTML = '▶ REANUDAR JORNADA';
-                    btnPause.style.display = 'none';
-                    btnStop.style.display = 'flex';
-                    if (panelAuditoria) {
-                        panelAuditoria.innerHTML = `
-                            <div style="font-size: 11px; font-weight: 700; color: #d97706; display: flex; align-items: center; gap: 5px; justify-content: flex-end;">
-                                <span style="display: inline-block; width: 8px; height: 8px; background: #f59e0b; border-radius: 50%;"></span>
-                                JORNADA EN PAUSA
-                            </div>
-                            <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Tiempo de almuerzo o personal</div>
-                        `;
-                    }
-                } else {
-                    if (segundero) segundero.className = 'clock-second';
-                    badge.className = 'badge detenido';
-                    badge.innerHTML = '🔴 INACTIVO (FINALIZADO)';
-                    btnStart.style.display = 'flex';
-                    btnStart.innerHTML = '▶ INICIAR JORNADA';
-                    btnPause.style.display = 'none';
-                    btnStop.style.display = 'none';
-                    if (panelAuditoria) {
-                        panelAuditoria.innerHTML = `
-                            <div style="font-size: 11px; font-weight: 700; color: #dc2626; display: flex; align-items: center; gap: 5px; justify-content: flex-end;">
-                                <span style="display: inline-block; width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></span>
-                                TURNO FINALIZADO
-                            </div>
-                            <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Reporte despachado formalmente</div>
-                        `;
-                    }
-                }
-            } catch (err) {
-                console.warn('Error sincronizando estado:', err);
-            }
-        }
+                setBombillos(data.estado);
 
                 if (data.notificaciones_activas !== undefined) {
                     actualizarBotonNotif(data.notificaciones_activas);
                 }
             } catch (err) {
-                console.error('Error al sincronizar estado:', err);
+                console.warn('Error sincronizando estado:', err);
             }
         }
 
@@ -2857,6 +2915,22 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     return;
                 }
             }
+
+            // RESPUESTA VISUAL INSTANTÁNEA (0 ms) AL HACER CLIC:
+            // Los bombillos LED cambian inmediatamente sin esperar respuesta de red
+            if (accion === 'iniciar') {
+                setBombillos('ACTIVO');
+                const entradaEl = document.getElementById('horaEntradaTag');
+                if (entradaEl && entradaEl.innerText.includes('Pendiente')) {
+                    const ahora = new Date();
+                    entradaEl.innerHTML = `⏰ Entrada: <strong>${ahora.toLocaleTimeString()}</strong>`;
+                }
+            } else if (accion === 'pausar') {
+                setBombillos('PAUSADO');
+            } else if (accion === 'finalizar') {
+                setBombillos('DETENIDO');
+            }
+
             try {
                 let res = await fetch(`/api/${accion}`, { method: 'POST' });
                 if (!res.ok) {
@@ -2866,11 +2940,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 const data = await res.json();
                 if (accion === 'finalizar') {
                     estadoActual = 'DETENIDO';
-                    const badge = document.getElementById('badgeEstado');
-                    badge.className = 'badge detenido';
-                    badge.innerHTML = '⚪ JORNADA FINALIZADA';
+                    setBombillos('DETENIDO');
                     const grid = document.querySelector('.controls-grid');
-                    grid.innerHTML = '<div style="grid-column: span 2; padding: 20px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 12px; color: #065f46; font-size: 14px; font-weight: 600; text-align: center; line-height: 1.5;">✅ Turno laboral finalizado con éxito.<br><span style="font-size: 12px; font-weight: 400; color: #047857;">Sus horas trabajadas han sido registradas formalmente. Puede cerrar esta ventana con total tranquilidad.</span></div>';
+                    grid.innerHTML = '<div style="grid-column: span 2; padding: 18px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 12px; color: #065f46; font-size: 13.5px; font-weight: 600; text-align: center; line-height: 1.5;">✅ Turno laboral finalizado con éxito.<br><span style="font-size: 12px; font-weight: 400; color: #047857;">Sus horas trabajadas han sido registradas formalmente. Puede cerrar esta ventana con total tranquilidad.</span></div>';
                     const btnSilencio = document.getElementById('btnSilencio');
                     if (btnSilencio) btnSilencio.style.display = 'none';
                     return;
@@ -3192,7 +3264,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.5.2"
+VERSION_LOCAL = "1.5.3"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
