@@ -1229,18 +1229,18 @@ class CorviAsistenciaEngine:
 
             if es_sergio:
                 if dia_semana <= 4:
-                    h_inicio = datetime.time(8, 30)
+                    h_inicio = datetime.time(7, 0) # Flexible desde las 7:00 AM
                     h_fin = datetime.time(17, 0)
                     laboral_hoy = True
                 elif dia_semana == 5:
-                    h_inicio = datetime.time(8, 30)
+                    h_inicio = datetime.time(7, 0) # Flexible desde las 7:00 AM
                     h_fin = datetime.time(13, 30)
                     laboral_hoy = True
                 else:
                     laboral_hoy = False
             else:
                 if dia_semana <= 4:
-                    h_inicio = datetime.time(8, 0)
+                    h_inicio = datetime.time(7, 0) # Flexible desde las 7:00 AM (cubre entradas anticipadas 7:30 - 7:55)
                     h_fin = datetime.time(18, 0)
                     laboral_hoy = True
                 else:
@@ -3150,7 +3150,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.4.8"
+VERSION_LOCAL = "1.4.9"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
@@ -3210,17 +3210,123 @@ def verificar_y_aplicar_actualizaciones():
 
     threading.Thread(target=_tarea_update, daemon=True).start()
 
+# =============================================================================
+# DETECTOR DE APAGADO DE WINDOWS / CIERRE DE SESIÓN / SHUTDOWN HARDWARE
+# Garantiza despacho formal del reporte antes de que se corte la energía del PC
+# =============================================================================
 import atexit
-def _al_cerrar_aplicacion():
-    global ENGINE, HILO_ENVIO_CORREO
-    if 'ENGINE' in globals() and ENGINE and ENGINE.estado == "ACTIVO":
-        print("[CONTROL DE ASISTENCIA] Cierre de aplicación detectado. Finalizando y despachando reportes...")
-        ENGINE.finalizar()
-        if HILO_ENVIO_CORREO and HILO_ENVIO_CORREO.is_alive():
-            HILO_ENVIO_CORREO.join(timeout=25)
-atexit.register(_al_cerrar_aplicacion)
+_GLOBAL_SHUTDOWN_EJECUTADO = False
+
+def _al_cerrar_aplicacion(origen="Normal"):
+    global ENGINE, HILO_ENVIO_CORREO, _GLOBAL_SHUTDOWN_EJECUTADO
+    if _GLOBAL_SHUTDOWN_EJECUTADO:
+        return
+    _GLOBAL_SHUTDOWN_EJECUTADO = True
+
+    if 'ENGINE' in globals() and ENGINE and ENGINE.estado in ["ACTIVO", "PAUSADO"]:
+        print(f"[SHUTDOWN/APAGADO] Cierre de PC o sesión detectado ({origen}). Finalizando jornada y despachando reporte...")
+        try:
+            ENGINE.finalizar()
+            if HILO_ENVIO_CORREO and HILO_ENVIO_CORREO.is_alive():
+                HILO_ENVIO_CORREO.join(timeout=12)
+        except Exception as e_cierre:
+            print(f"[ERROR Cierre]: {e_cierre}")
+
+atexit.register(lambda: _al_cerrar_aplicacion("atexit"))
+
+def setup_sistema_shutdown_listener():
+    """
+    Hook de sistema operativo para capturar apagado (Shutdown, Reboot, Logoff)
+    y despachar el reporte antes de que Windows o Linux interrumpa los procesos.
+    """
+    # 1. Señales estándar POSIX / Linux
+    try:
+        import signal
+        def _sig_handler(signum, frame):
+            _al_cerrar_aplicacion(f"Signal {signum}")
+            sys.exit(0)
+        signal.signal(signal.SIGTERM, _sig_handler)
+        signal.signal(signal.SIGINT, _sig_handler)
+    except Exception:
+        pass
+
+    # 2. Win32 Shutdown Listener (Kernel CtrlHandler + WM_QUERYENDSESSION)
+    if IS_WINDOWS:
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            # A. Handler de Consola/Kernel de Windows
+            HandlerRoutine = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
+            def _win_ctrl_handler(ctrl_type):
+                # 2 = CTRL_CLOSE_EVENT, 5 = CTRL_LOGOFF_EVENT, 6 = CTRL_SHUTDOWN_EVENT
+                if ctrl_type in (2, 5, 6):
+                    _al_cerrar_aplicacion(f"Windows CtrlEvent {ctrl_type}")
+                    return True
+                return False
+
+            global _global_win_ctrl_routine
+            _global_win_ctrl_routine = HandlerRoutine(_win_ctrl_handler)
+            ctypes.windll.kernel32.SetConsoleCtrlHandler(_global_win_ctrl_routine, True)
+
+            # B. Ventana Invisible de Mensajes de Apagado (WM_QUERYENDSESSION = 0x0011)
+            def _hilo_ventana_shutdown():
+                try:
+                    user32 = ctypes.windll.user32
+                    kernel32 = ctypes.windll.kernel32
+                    WM_QUERYENDSESSION = 0x0011
+                    WM_ENDSESSION = 0x0016
+                    HWND_MESSAGE = -3
+
+                    WNDPROC = ctypes.WINFUNCTYPE(ctypes.c_long, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+
+                    def _wnd_proc(hwnd, msg, wparam, lparam):
+                        if msg in (WM_QUERYENDSESSION, WM_ENDSESSION):
+                            _al_cerrar_aplicacion("Windows WM_QUERYENDSESSION")
+                            return 1
+                        return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
+
+                    global _global_wnd_proc_shutdown
+                    _global_wnd_proc_shutdown = WNDPROC(_wnd_proc)
+
+                    class WNDCLASSEXW(ctypes.Structure):
+                        _fields_ = [
+                            ('cbSize', wintypes.UINT),
+                            ('style', wintypes.UINT),
+                            ('lpfnWndProc', WNDPROC),
+                            ('cbClsExtra', ctypes.c_int),
+                            ('cbWndExtra', ctypes.c_int),
+                            ('hInstance', wintypes.HINSTANCE),
+                            ('hIcon', wintypes.HICON),
+                            ('hCursor', wintypes.HANDLE),
+                            ('hbrBackground', wintypes.HBRUSH),
+                            ('lpszMenuName', wintypes.LPCWSTR),
+                            ('lpszClassName', wintypes.LPCWSTR),
+                            ('hIconSm', wintypes.HICON)
+                        ]
+
+                    wndclass = WNDCLASSEXW()
+                    wndclass.cbSize = ctypes.sizeof(WNDCLASSEXW)
+                    wndclass.lpfnWndProc = _global_wnd_proc_shutdown
+                    wndclass.hInstance = kernel32.GetModuleHandleW(None)
+                    wndclass.lpszClassName = "CORVIShutdownListener"
+
+                    user32.RegisterClassExW(ctypes.byref(wndclass))
+                    hwnd = user32.CreateWindowExW(0, "CORVIShutdownListener", "CORVI Listener", 0, 0, 0, 0, 0, HWND_MESSAGE, 0, wndclass.hInstance, 0)
+
+                    msg = wintypes.MSG()
+                    while user32.GetMessageW(ctypes.byref(msg), 0, 0, 0) > 0:
+                        user32.TranslateMessage(ctypes.byref(msg))
+                        user32.DispatchMessageW(ctypes.byref(msg))
+                except Exception:
+                    pass
+
+            threading.Thread(target=_hilo_ventana_shutdown, daemon=True).start()
+        except Exception as e_win_hook:
+            print(f"[ERROR Setup Shutdown Windows]: {e_win_hook}")
 
 if __name__ == "__main__":
+    setup_sistema_shutdown_listener()
     verificar_y_aplicar_actualizaciones()
     puerto = CONFIG.get("puerto_web", 8765)
 

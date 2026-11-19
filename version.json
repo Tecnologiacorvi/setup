@@ -1,6 +1,6 @@
 {
-  "version": "1.4.8",
+  "version": "1.4.9",
   "fecha": "2026-11-18",
-  "descripcion": "Cronometro en vivo segundo a segundo (00m 01s, 00m 02s...) con animacion activa de segundero",
+  "descripcion": "Centinela desde las 7:00 AM y gancho de apagado de hardware/Windows (despacho garantizado al apagar el PC)",
   "min_version": "1.0.0"
 }
