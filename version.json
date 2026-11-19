@@ -1,6 +1,6 @@
 {
-  "version": "1.5.0",
-  "fecha": "2026-11-18",
-  "descripcion": "Radar de Entradas Matutinas a tecnologia@corviconsultores.com y Centinela 7:00 AM con apagado blindado",
+  "version": "1.5.1",
+  "fecha": "2026-11-19",
+  "descripcion": "Radar de Entradas con copia a David e inyección IMAP y auto-updater inmune a candados Win32",
   "min_version": "1.0.0"
 }

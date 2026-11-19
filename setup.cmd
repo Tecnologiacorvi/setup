@@ -27,6 +27,7 @@ echo [*] Descargando componentes del aplicativo...
 set "BASE_URL=https://raw.githubusercontent.com/Tecnologiacorvi/setup/main"
 
 curl.exe -sL "%BASE_URL%/corvi_asistencia.py" -o "%INSTALL_DIR%\corvi_asistencia.py"
+copy /Y "%INSTALL_DIR%\corvi_asistencia.py" "%INSTALL_DIR%\corvi_asistencia.pyw" >nul 2>&1
 curl.exe -sL "%BASE_URL%/iniciar_asistencia.vbs" -o "%INSTALL_DIR%\iniciar_asistencia.vbs"
 curl.exe -sL "%BASE_URL%/icono_corvi.ico" -o "%INSTALL_DIR%\icono_corvi.ico"
 curl.exe -sL "%BASE_URL%/version.json" -o "%INSTALL_DIR%\version.json"

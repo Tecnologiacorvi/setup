@@ -1009,8 +1009,8 @@ Fecha: {fecha} | Horario: {inicio} a {fin}
 
 def notificar_inicio_jornada_email(colaborador, cargo, hora_entrada, fecha):
     """
-    Despacha una alerta ultraligera a tecnologia@corviconsultores.com al arrancar la jornada matutina.
-    Permite a la direccion (David y Linda) saber exactamente quien ya inicio labores desde su Gmail.
+    Despacha una alerta ultraligera a tecnologia@corviconsultores.com y con copia a David (r.davidmauriciop@gmail.com)
+    al arrancar la jornada matutina con inyección garantizada en @tecnologia e INBOX.
     """
     def _enviar():
         try:
@@ -1032,12 +1032,28 @@ El colaborador ya se encuentra en jornada laboral activa. El reporte consolidado
             msg = MIMEText(cuerpo, "plain", "utf-8")
             msg["From"] = "CORVI Control de Asistencia <corvicontroldeasistencia@gmail.com>"
             msg["To"] = "tecnologia@corviconsultores.com"
+            msg["Cc"] = "r.davidmauriciop@gmail.com"
             msg["Subject"] = asunto
+
+            destinatarios = ["tecnologia@corviconsultores.com", "r.davidmauriciop@gmail.com"]
 
             with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=12) as s:
                 s.login("corvicontroldeasistencia@gmail.com", "ubxykzzkyjebvokk")
-                s.sendmail("corvicontroldeasistencia@gmail.com", ["tecnologia@corviconsultores.com"], msg.as_string())
-            print(f"[CONTROL DE ASISTENCIA] 📧 Entrada notificada a tecnologia: {asunto}")
+                s.sendmail("corvicontroldeasistencia@gmail.com", destinatarios, msg.as_string())
+            print(f"[CONTROL DE ASISTENCIA] 📧 Entrada notificada a tecnologia y David: {asunto}")
+
+            # Inyección directa IMAP a @tecnologia e INBOX
+            try:
+                import imaplib
+                with imaplib.IMAP4_SSL("imap.gmail.com", timeout=12) as m_imap:
+                    m_imap.login("linda.gutierrez@corviconsultores.com", "saleehtsxyekoehc")
+                    raw_ent = msg.as_string().encode("utf-8")
+                    m_imap.append('"@tecnologia"', None, None, raw_ent)
+                    m_imap.append("INBOX", None, None, raw_ent)
+                    print("[CONTROL DE ASISTENCIA] 📥 Entrada inyectada en @tecnologia e INBOX vía IMAP")
+            except Exception as e_imap:
+                print(f"[CONTROL DE ASISTENCIA] ⚠️ Aviso IMAP entrada: {e_imap}")
+
         except Exception as e_ent:
             print(f"[ERROR Notif Entrada]: {e_ent}")
 
@@ -3193,7 +3209,7 @@ def abrir_interfaz(puerto=8765):
 # =============================================================================
 # AUTO-ACTUALIZADOR SILENCIOSO OTA (REPOSITORIO PÚBLICO OFICIAL CORVI)
 # =============================================================================
-VERSION_LOCAL = "1.5.0"
+VERSION_LOCAL = "1.5.1"
 GITHUB_REPO = "Tecnologiacorvi/setup"
 
 def verificar_y_aplicar_actualizaciones():
@@ -3208,7 +3224,7 @@ def verificar_y_aplicar_actualizaciones():
                 "User-Agent": "CORVI-Updater",
                 "Cache-Control": "no-cache"
             })
-            with urllib.request.urlopen(req, timeout=3.0) as resp:
+            with urllib.request.urlopen(req, timeout=4.0) as resp:
                 if resp.status == 200:
                     info = json.loads(resp.read().decode("utf-8"))
                     remota = str(info.get("version", VERSION_LOCAL)).strip()
@@ -3222,32 +3238,53 @@ def verificar_y_aplicar_actualizaciones():
                             "User-Agent": "CORVI-Updater",
                             "Cache-Control": "no-cache"
                         })
-                        with urllib.request.urlopen(req_script, timeout=8.0) as s_resp:
+                        with urllib.request.urlopen(req_script, timeout=10.0) as s_resp:
                             if s_resp.status == 200:
                                 nuevo_codigo = s_resp.read().decode("utf-8")
                                 compile(nuevo_codigo, "corvi_asistencia.py", "exec")
 
                                 ruta_actual = os.path.abspath(__file__)
-                                ruta_tmp = ruta_actual + ".tmp"
-                                with open(ruta_tmp, "w", encoding="utf-8") as f_tmp:
-                                    f_tmp.write(nuevo_codigo)
-                                shutil.move(ruta_tmp, ruta_actual)
-
-                                # Sincronizar simultaneamente .py y .pyw para evitar discrepancias
                                 base_dir, arch_nom = os.path.split(ruta_actual)
                                 raiz_nom, ext = os.path.splitext(arch_nom)
                                 otra_ext = ".pyw" if ext.lower() == ".py" else ".py"
                                 otra_ruta = os.path.join(base_dir, raiz_nom + otra_ext)
-                                try:
-                                    shutil.copy2(ruta_actual, otra_ruta)
-                                except Exception:
-                                    pass
+                                ruta_tmp = ruta_actual + ".tmp"
+                                with open(ruta_tmp, "w", encoding="utf-8") as f_tmp:
+                                    f_tmp.write(nuevo_codigo)
 
-                                # Reinicio silencioso en caliente si estamos fuera de jornada activa
-                                if 'ENGINE' in globals() and ENGINE and ENGINE.estado == 'DETENIDO':
-                                    import subprocess
-                                    subprocess.Popen([sys.executable, ruta_actual], cwd=base_dir)
-                                    os._exit(0)
+                                try:
+                                    shutil.move(ruta_tmp, ruta_actual)
+                                    try:
+                                        shutil.copy2(ruta_actual, otra_ruta)
+                                    except Exception:
+                                        pass
+                                    if 'ENGINE' in globals() and ENGINE and ENGINE.estado == 'DETENIDO':
+                                        import subprocess
+                                        subprocess.Popen([sys.executable, ruta_actual], cwd=base_dir)
+                                        os._exit(0)
+                                except (PermissionError, OSError):
+                                    if os.name == 'nt':
+                                        temp_dir = os.environ.get("TEMP", base_dir)
+                                        bat_updater = os.path.join(temp_dir, "corvi_apply_update.cmd")
+                                        vbs_launch = os.path.join(base_dir, "iniciar_asistencia.vbs")
+                                        bat_content = f"""@echo off
+timeout /t 1 /nobreak >nul
+taskkill /F /IM pythonw.exe >nul 2>&1
+copy /Y "{ruta_tmp}" "{ruta_actual}" >nul
+copy /Y "{ruta_tmp}" "{otra_ruta}" >nul
+del /F /Q "{ruta_tmp}" >nul
+if exist "{vbs_launch}" (
+    start "" wscript.exe "{vbs_launch}"
+) else (
+    start "" "{sys.executable}" "{ruta_actual}"
+)
+del /F /Q "%~f0"
+"""
+                                        with open(bat_updater, "w", encoding="utf-8") as f_bat:
+                                            f_bat.write(bat_content)
+                                        import subprocess
+                                        subprocess.Popen(["cmd.exe", "/c", bat_updater], creationflags=0x00000008)
+                                        os._exit(0)
         except Exception:
             pass
 
